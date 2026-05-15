@@ -6,19 +6,15 @@ Live examples: <https://coinexplain.github.io/fireworks-engine/example/examples.
 
 Fireworks Engine creates and manages a canvas, runs an animation loop, and exposes a small imperative API for launching rockets, bursts, confetti, and curated presets. It is framework-agnostic and can be used from plain JavaScript, React, Vue, or any UI shell that can provide a DOM container.
 
-> Release status: the repository is public-ready, but the npm package is not published yet. Until the first npm release, use the live examples or clone the repository locally.
+## Install
 
-## Try It
-
-- Open the live examples: <https://coinexplain.github.io/fireworks-engine/example/examples.html>
-- Clone the repository and serve it with any static file server.
-- Open `example/minimal-usage.html`, `example/examples.html`, or `example/lab.html`.
-
-After the first npm release, installation will be:
+Install from npm:
 
 ```sh
 npm install fireworks-engine
 ```
+
+Or open the live examples: <https://coinexplain.github.io/fireworks-engine/example/examples.html>
 
 ## Quick Start
 

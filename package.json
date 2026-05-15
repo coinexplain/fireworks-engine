@@ -1,6 +1,5 @@
 {
   "name": "fireworks-engine",
-  "private": true,
   "version": "1.0.0",
   "license": "BSD-2-Clause",
   "description": "Reusable canvas fireworks runtime package for standalone integrations and demos.",

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-lang="en" data-theme="light">
+<html lang="en" data-lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fireworks Engine Options Reference</title>
     <style>
-        /* CSS Variables - Light Theme (Default) */
+        /* CSS Variables - Light Theme */
         :root {
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
@@ -2096,8 +2096,7 @@
 
             // Check local storage or system preference
             const savedTheme = localStorage.getItem('fw-doc-theme');
-            const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const initialTheme = savedTheme ? savedTheme : (sysDark ? 'dark' : 'light');
+            const initialTheme = savedTheme ? savedTheme : 'dark';
 
             setTheme(initialTheme);
 
