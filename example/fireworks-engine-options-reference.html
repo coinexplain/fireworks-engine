@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fireworks Engine Options Reference</title>
+    <style>
+        /* CSS Variables - Light Theme (Default) */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-heading: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --border: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --code-text: #db2777;
+            --badge-bg: #f1f5f9;
+            --table-header: #f8fafc;
+            --table-hover: #f8fafc;
+            --icon-color: #64748b;
+
+            /* Syntax Highlighting */
+            --val-bool: #8b5cf6;
+            --val-num: #0284c7;
+            --val-str: #ea580c;
+            --val-null: #94a3b8;
+        }
+
+        /* CSS Variables - Dark Theme */
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-heading: #f8fafc;
+            --text-main: #cbd5e1;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-light: #1e3a8a;
+            --border: #334155;
+            --code-bg: #020617;
+            --code-text: #f472b6;
+            --badge-bg: #0f172a;
+            --table-header: #0f172a;
+            --table-hover: #334155;
+            --icon-color: #cbd5e1;
+
+            /* Syntax Highlighting */
+            --val-bool: #a855f7;
+            --val-num: #38bdf8;
+            --val-str: #fb923c;
+            --val-null: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 2rem;
+            /* Offset for anchored links */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1.5rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Main Layout */
+        .layout {
+            display: flex;
+            gap: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: flex-start;
+            /* Required for sticky to work */
+        }
+
+        .sidebar {
+            flex: 0 0 260px;
+            position: sticky;
+            top: 2rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        /* Minimal scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            /* Prevents flex items from overflowing */
+            max-width: 1000px;
+            position: relative;
+        }
+
+        /* Top Controls Container */
+        .top-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--icon-color);
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-body);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        [data-theme="light"] .icon-sun {
+            display: none;
+        }
+
+        [data-theme="dark"] .icon-moon {
+            display: none;
+        }
+
+        /* Language Switcher */
+        .lang-switch {
+            display: flex;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: var(--bg-body);
+        }
+
+        .lang-btn.active {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        html[data-lang="en"] [lang="ru"] {
+            display: none !important;
+        }
+
+        html[data-lang="ru"] [lang="en"] {
+            display: none !important;
+        }
+
+        /* Navigation (Sidebar) */
+        .toc {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .toc-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-heading);
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .toc-links {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .toc-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .toc-links a:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        [data-theme="dark"] .toc-links a:hover {
+            background: var(--table-hover);
+            color: var(--primary);
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text-heading);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            padding-right: 180px;
+            /* Space for controls */
+            transition: color 0.3s ease;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            color: var(--text-heading);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Remove top margin from first H2 */
+        .main-content>h2:first-of-type {
+            margin-top: 1.5rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            color: var(--text-heading);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            transition: color 0.3s ease;
+        }
+
+        p,
+        ul {
+            margin-bottom: 1rem;
+        }
+
+        ul {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Inline Code & Highlighting */
+        code {
+            font-family: "Fira Code", Consolas, Monaco, monospace;
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.1em 0.5em;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-family: "Fira Code", Consolas, monospace;
+            font-weight: 600;
+            background-color: var(--badge-bg);
+            transition: background-color 0.3s ease;
+        }
+
+        .val-bool {
+            color: var(--val-bool);
+        }
+
+        .val-num {
+            color: var(--val-num);
+        }
+
+        .val-str {
+            color: var(--val-str);
+        }
+
+        .val-null {
+            color: var(--val-null);
+            font-style: italic;
+        }
+
+        /* Callouts / Notes */
+        .callout {
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .callout p:last-child {
+            margin-bottom: 0;
+        }
+
+        .callout strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tables & Column Sizing Rules */
+        .table-container {
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        th {
+            background-color: var(--table-header);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: var(--table-hover);
+        }
+
+        /* Column Sizing Logic */
+        td:first-child {
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .table-standard td:nth-child(2) {
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .table-start-time td:nth-child(2),
+        .table-start-time td:nth-child(3) {
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .table-presets td:nth-child(2) {
+            white-space: normal;
+            width: auto;
+        }
+
+        .table-presets td:nth-child(3) {
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .preset-preview-bar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .preset-preview-button,
+        .preset-stop-button {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.45rem 0.75rem;
+            background: var(--primary);
+            color: #ffffff;
+            font: inherit;
+            font-size: 0.875rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .preset-preview-button:hover,
+        .preset-stop-button:hover {
+            opacity: 0.88;
+        }
+
+        .preset-preview-button:focus-visible,
+        .preset-stop-button:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .preset-stop-button {
+            background: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .preset-preview-status {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1024px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                flex: none;
+                width: 100%;
+                position: static;
+                max-height: none;
+                overflow: visible;
+            }
+
+            .toc-links {
+                flex-direction: row;
+                /* Horizontal flow on mobile */
+                flex-wrap: wrap;
+            }
+
+            .top-controls {
+                position: static;
+                justify-content: flex-end;
+                margin-bottom: 1rem;
+            }
+
+            h1 {
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar">
+            <div class="toc">
+                <div class="toc-title">
+                    <span lang="en">Quick Navigation</span>
+                    <span lang="ru">Быстрая навигация</span>
+                </div>
+                <div class="toc-links">
+                    <a href="#how-to-read"><span lang="en">How to read</span><span lang="ru">Как читать</span></a>
+                    <a href="#scopes"><span lang="en">Scope map</span><span lang="ru">Области видимости</span></a>
+                    <a href="#start-time">Start-time</a>
+                    <a href="#canvas">Canvas</a>
+                    <a href="#runtime">Runtime</a>
+                    <a href="#performance">Performance</a>
+                    <a href="#rocket">Rocket</a>
+                    <a href="#tail-embers">Tail Embers</a>
+                    <a href="#burst-forms">Burst Forms</a>
+                    <a href="#burst-sparks">Burst Sparks</a>
+                    <a href="#center-flash">Center Flash</a>
+                    <a href="#twinkle-cloud">Twinkle Cloud</a>
+                    <a href="#shortcuts">Shortcuts</a>
+                    <a href="#presets">Presets</a>
+                    <a href="#tuning-order">Tuning Order</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <div class="top-controls">
+                <button class="theme-toggle" id="theme-btn" aria-label="Toggle Theme">
+                    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+
+                <div class="lang-switch">
+                    <button class="lang-btn active" data-target-lang="en">EN</button>
+                    <button class="lang-btn" data-target-lang="ru">RU</button>
+                </div>
+            </div>
+
+            <h1>Fireworks Engine Options Reference</h1>
+
+            <div class="callout">
+                <p lang="en">One place to look up the current public option paths, what they
+                    affect, and which ones are persistent vs one-shot.</p>
+                <p lang="ru">Единое место для поиска текущих публичных путей опций, на что они
+                    влияют и какие из них являются постоянными, а какие одноразовыми.</p>
+            </div>
+
+            <h2 id="how-to-read">
+                <span lang="en">How to read this file</span>
+                <span lang="ru">Как читать этот документ</span>
+            </h2>
+            <ul>
+                <li>
+                    <span lang="en">Paths use the exact property names from <code>index.d.ts</code>.</span>
+                    <span lang="ru">Пути (Paths) используют точные имена свойств из <code>index.d.ts</code>.</span>
+                </li>
+                <li>
+                    <span lang="en">There are <strong>3 scopes</strong>:</span>
+                    <span lang="ru">Существует <strong>3 области видимости (scopes)</strong>:</span>
+                    <ul>
+                        <li>
+                            <span lang="en">Persistent engine config: <code>createFireworksEngine({ ... })</code></span>
+                            <span lang="ru">Постоянная конфигурация движка:
+                                <code>createFireworksEngine({ ... })</code></span>
+                        </li>
+                        <li>
+                            <span lang="en">Start-time config: <code>engine.start(config)</code> and
+                                <code>engine.startPreset(name)</code></span>
+                            <span lang="ru">Конфигурация при старте: <code>engine.start(config)</code> и
+                                <code>engine.startPreset(name)</code></span>
+                        </li>
+                        <li>
+                            <span lang="en">Launch-time config: <code>boom</code>, <code>burst</code>,
+                                <code>confetti</code>, <code>launchRocketAt</code>, <code>launchRocketFromTo</code>,
+                                <code>launchRocket</code></span>
+                            <span lang="ru">Конфигурация при запуске: <code>boom</code>, <code>burst</code>,
+                                <code>confetti</code>, <code>launchRocketAt</code>, <code>launchRocketFromTo</code>,
+                                <code>launchRocket</code></span>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <span lang="en"><code>launchRocket(options)</code> uses <code>count</code> as a batch size, and
+                        <code>launchPresetAt(name, x, y, options)</code> also honors <code>count</code> for repeated
+                        same-point launches.</span>
+                    <span lang="ru"><code>launchRocket(options)</code> использует <code>count</code> как размер пакета
+                        (batch size), а <code>launchPresetAt(name, x, y, options)</code> также учитывает
+                        <code>count</code> для повторных запусков в одной точке.</span>
+                </li>
+                <li>
+                    <span lang="en"><code>rocket.durationMin</code>, <code>rocket.durationMax</code>, and
+                        <code>rocket.cascade</code> are launch-time rocket extras, not persistent engine
+                        defaults.</span>
+                    <span lang="ru"><code>rocket.durationMin</code>, <code>rocket.durationMax</code> и
+                        <code>rocket.cascade</code> — это дополнительные параметры ракеты во время запуска, а не
+                        постоянные настройки движка.</span>
+                </li>
+                <li>
+                    <span lang="en">Many particle count fields are <code>sizeScale</code>-aware in the launch builders,
+                        so <code>sizeScale</code> can affect more than just visible size.</span>
+                    <span lang="ru">Многие поля количества частиц зависят от <code>sizeScale</code> в
+                        функциях-строителях, поэтому <code>sizeScale</code> может влиять не только на визуальный
+                        размер.</span>
+                </li>
+                <li>
+                    <span lang="en">If a field is omitted, the runtime uses the default listed here or inherits from the
+                        current engine / launch context.</span>
+                    <span lang="ru">Если поле опущено, среда выполнения использует значение по умолчанию, указанное
+                        здесь, или наследует его из текущего контекста движка/запуска.</span>
+                </li>
+            </ul>
+
+            <h2 id="scopes">
+                <span lang="en">Scope map</span>
+                <span lang="ru">Карта областей видимости (Scope map)</span>
+            </h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scope</th>
+                            <th style="width: 40%;">Examples</th>
+                            <th><span lang="en">Notes</span><span lang="ru">Примечания</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Persistent engine config</strong></td>
+                            <td><code>canvas</code>, <code>runtime</code>, <code>performance</code>,
+                                <code>rocket</code>, <code>rocketTailEmbers</code>, <code>burstForms</code>,
+                                <code>burstSparks</code>, <code>burstCenterFlash</code>, <code>burstTwinkleCloud</code>
+                            </td>
+                            <td>
+                                <span lang="en">Stored on the engine and used as the baseline for later launches.</span>
+                                <span lang="ru">Сохраняется в движке и используется как базовая линия для последующих
+                                    запусков.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Start-time config</strong></td>
+                            <td><code>mode</code>, <code>bursts</code>, <code>duration</code>, <code>rocketCount</code>,
+                                <code>rocketDelay</code>, <code>totalDuration</code>, <code>timeScale</code>,
+                                <code>sizeScale</code>, <code>simple</code>, hooks
+                            </td>
+                            <td>
+                                <span lang="en">Used by <code>start(config)</code> and <code>startPreset(name)</code>
+                                    for a single run.</span>
+                                <span lang="ru">Используется в <code>start(config)</code> и
+                                    <code>startPreset(name)</code> для одиночного запуска.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Launch-time config</strong></td>
+                            <td><code>timeScale</code>, <code>sizeScale</code>, <code>simple</code>, <code>rocket</code>
+                                extras, <code>rocketTailEmbers</code>, <code>burst*</code>, <code>count</code></td>
+                            <td>
+                                <span lang="en">Used by one launch call such as <code>burst(...)</code>,
+                                    <code>confetti(...)</code>, or <code>launchRocket(...)</code>.</span>
+                                <span lang="ru">Используется для одного вызова запуска, такого как
+                                    <code>burst(...)</code>, <code>confetti(...)</code>, или
+                                    <code>launchRocket(...)</code>.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="start-time">Start-time controls</h2>
+            <p lang="en">These are start-time controls. They are read by <code>start(config)</code> /
+                <code>startPreset(name)</code>; if you pass them to <code>createFireworksEngine()</code>, they are not
+                stored as persistent engine defaults.
+            </p>
+            <p lang="ru">Это элементы управления во время старта. Они считываются через <code>start(config)</code> /
+                <code>startPreset(name)</code>; если вы передадите их в <code>createFireworksEngine()</code>, они <em>не
+                    будут</em> сохранены как постоянные значения по умолчанию.
+            </p>
+
+            <div class="table-container">
+                <table class="table-start-time">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th>Used by</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>mode</code></td>
+                            <td><span class="badge val-str">'burst'</span></td>
+                            <td><code>start</code>, <code>preset</code></td>
+                            <td>
+                                <span lang="en">Selects the start behavior. <code>'burst'</code> launches multiple
+                                    bursts directly. <code>'rocket'</code> schedules rockets and lets them resolve into
+                                    bursts.</span>
+                                <span lang="ru">Выбирает поведение запуска. <code>'burst'</code> запускает взрывы
+                                    напрямую. <code>'rocket'</code> планирует ракеты, которые затем переходят во
+                                    взрывы.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>bursts</code></td>
+                            <td><span class="badge val-num">4</span></td>
+                            <td><code>start</code> (mode: <code>'burst'</code>)</td>
+                            <td>
+                                <span lang="en">Number of bursts scheduled across the start duration.</span>
+                                <span lang="ru">Количество взрывов, запланированных на время запуска.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>duration</code></td>
+                            <td><span class="badge val-num">1200</span> ms</td>
+                            <td><code>start</code> (mode: <code>'burst'</code>)</td>
+                            <td>
+                                <span lang="en">Duration span for <code>'burst'</code> mode.</span>
+                                <span lang="ru">Продолжительность для режима <code>'burst'</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketCount</code></td>
+                            <td><span class="badge val-num">2</span></td>
+                            <td><code>start</code> (mode: <code>'rocket'</code>)</td>
+                            <td>
+                                <span lang="en">Number of rockets scheduled.</span>
+                                <span lang="ru">Количество запланированных ракет.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketDelay</code></td>
+                            <td><span class="badge val-num">220</span> ms</td>
+                            <td><code>start</code> (mode: <code>'rocket'</code>)</td>
+                            <td>
+                                <span lang="en">Delay between scheduled rockets.</span>
+                                <span lang="ru">Задержка между запланированными ракетами.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>totalDuration</code></td>
+                            <td><span class="badge val-num">2200</span> ms</td>
+                            <td><code>start</code> (mode: <code>'rocket'</code>)</td>
+                            <td>
+                                <span lang="en">Finish timeout for rocket-mode starts.</span>
+                                <span lang="ru">Таймаут завершения для стартов в режиме ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>timeScale</code></td>
+                            <td><span class="badge val-num">1</span></td>
+                            <td><code>start</code> / <code>launch</code> / <code>update</code></td>
+                            <td>
+                                <span lang="en">Scales the whole timeline. Higher values run faster, lower values
+                                    slower. Launch helpers apply this through <code>updateOptions</code>, so the new
+                                    value stays on the engine until another <code>timeScale</code> is provided.</span>
+                                <span lang="ru">Масштабирует весь таймлайн. Высокие значения = быстрее, низкие =
+                                    медленнее. Launch-хелперы применяют это через <code>updateOptions</code>, поэтому
+                                    новое значение остается в engine, пока не будет передан другой
+                                    <code>timeScale</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>sizeScale</code></td>
+                            <td><span class="badge val-num">1</span></td>
+                            <td><code>start</code> / <code>launch</code> / <code>update</code></td>
+                            <td>
+                                <span lang="en">Experimental envelope scaling. Changes more than visible size; keep
+                                    close to 1 for original look. It becomes persistent when set through
+                                    <code>createFireworksEngine</code> or <code>updateOptions</code>; launch/start
+                                    configs use their own normalized value for that run.</span>
+                                <span lang="ru">Масштабирование эффекта. Меняет не только размер, держите ближе к
+                                    <code>1</code> для оригинального вида. Значение становится постоянным, если задано
+                                    через <code>createFireworksEngine</code> или <code>updateOptions</code>; launch/start
+                                    configs используют свое нормализованное значение для конкретного запуска.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>simple</code></td>
+                            <td><span class="badge val-bool">false</span></td>
+                            <td><code>start</code> / <code>launch</code></td>
+                            <td>
+                                <span lang="en">Simplified burst-path hint used by some authored recipes.</span>
+                                <span lang="ru">Упрощенный путь взрыва (для производительности).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>onStart</code></td>
+                            <td><span class="badge val-null">none</span></td>
+                            <td><code>start</code> / <code>preset</code></td>
+                            <td>
+                                <span lang="en">Lifecycle hook fired when a run starts.</span>
+                                <span lang="ru">Lifecycle хук: вызывается при старте.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>onStop</code></td>
+                            <td><span class="badge val-null">none</span></td>
+                            <td><code>start</code> / <code>preset</code></td>
+                            <td>
+                                <span lang="en">Lifecycle hook fired when a run stops.</span>
+                                <span lang="ru">Lifecycle хук: вызывается при остановке.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>onFinish</code></td>
+                            <td><span class="badge val-null">none</span></td>
+                            <td><code>start</code> / <code>preset</code></td>
+                            <td>
+                                <span lang="en">Lifecycle hook fired when the run drains naturally.</span>
+                                <span lang="ru">Lifecycle хук: вызывается, когда все частицы гаснут.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="canvas">Canvas <span lang="ru">(Монтаж и DOM)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>canvas.appendTarget</code></td>
+                            <td><span class="badge val-null">omitted</span></td>
+                            <td>
+                                <span lang="en">If present, the engine appends its canvas here. If omitted, creates a
+                                    full-viewport canvas.</span>
+                                <span lang="ru">Если указано, движок создает Canvas внутри этого элемента. Иначе — на
+                                    весь Viewport.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>canvas.maxDevicePixelRatio</code></td>
+                            <td><span class="badge val-num">2</span></td>
+                            <td>
+                                <span lang="en">Caps the canvas DPR so rendering does not scale without limit on dense
+                                    screens.</span>
+                                <span lang="ru">Ограничивает DPR, чтобы рендер не тормозил на очень плотных
+                                    экранах.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>canvas.zIndex</code></td>
+                            <td><span class="badge val-num">9999</span></td>
+                            <td>
+                                <span lang="en">Controls the canvas stacking order.</span>
+                                <span lang="ru">Управляет порядком наложения Canvas.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="runtime">Runtime <span lang="ru">(Интеграция хоста)</span></h2>
+            <p lang="en"><em>These options are integration hooks, not visual tuning knobs.</em></p>
+            <p lang="ru"><em>Эти опции являются хуками интеграции, а не визуальными настройками.</em></p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default behavior</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>runtime.document</code></td>
+                            <td><span class="badge val-str">global document</span></td>
+                            <td>
+                                <span lang="en">Overrides the document used for DOM access.</span>
+                                <span lang="ru">Переопределяет document для доступа к DOM.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.window</code></td>
+                            <td><span class="badge val-str">global window</span></td>
+                            <td>
+                                <span lang="en">Overrides the window used for viewport and events.</span>
+                                <span lang="ru">Переопределяет window для viewport и событий.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.root</code></td>
+                            <td><span class="badge val-str">body</span> fallback</td>
+                            <td>
+                                <span lang="en">Root element or resolver function:
+                                    <code>({ document, window }) => element</code>.</span>
+                                <span lang="ru">Корневой элемент. Может быть функцией:
+                                    <code>({ document, window }) => element</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.prefersReducedMotion</code></td>
+                            <td><span class="badge val-str">built-in check</span></td>
+                            <td>
+                                <span lang="en">Lets the host provide a custom reduced-motion detector.</span>
+                                <span lang="ru">Кастомный детектор отключения анимаций (Accessibility).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.requestAnimationFrame</code></td>
+                            <td><span class="badge val-str">global rAF</span></td>
+                            <td>
+                                <span lang="en">Custom animation frame scheduler.</span>
+                                <span lang="ru">Кастомный планировщик кадров.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.cancelAnimationFrame</code></td>
+                            <td><span class="badge val-str">global cAF</span></td>
+                            <td>
+                                <span lang="en">Custom animation frame canceller.</span>
+                                <span lang="ru">Кастомный отменщик кадров.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.setTimeout</code></td>
+                            <td><span class="badge val-str">global setTimeout</span></td>
+                            <td>
+                                <span lang="en">Custom timeout scheduler.</span>
+                                <span lang="ru">Кастомный планировщик таймаутов.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.clearTimeout</code></td>
+                            <td><span class="badge val-str">global clearTimeout</span></td>
+                            <td>
+                                <span lang="en">Custom timeout canceller.</span>
+                                <span lang="ru">Кастомный отменщик таймаутов.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>runtime.now</code></td>
+                            <td><span class="badge val-str">performance.now()</span></td>
+                            <td>
+                                <span lang="en">Custom time source for the render loop.</span>
+                                <span lang="ru">Кастомный источник времени для цикла рендера.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="performance">Performance <span lang="ru">(Производительность)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>performance.enableBurstQueueThrottling</code></td>
+                            <td><span class="badge val-bool">false</span></td>
+                            <td>
+                                <span lang="en">Enables burst queue throttling under pressure. Changes behavior under
+                                    load.</span>
+                                <span lang="ru">Включает троттлинг очереди взрывов под нагрузкой. Изменяет поведение
+                                    системы при давлении.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>performance.maxBurstParticlesPerFrame</code></td>
+                            <td><span class="badge val-num">12</span></td>
+                            <td>
+                                <span lang="en">Caps burst particles emitted per frame when pressure logic is
+                                    active.</span>
+                                <span lang="ru">Ограничивает кол-во излучаемых частиц за кадр, если включено
+                                    давление.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>performance.particlePressureThreshold</code></td>
+                            <td><span class="badge val-num">18</span></td>
+                            <td>
+                                <span lang="en">Threshold used to decide when pressure-aware render behavior should kick
+                                    in.</span>
+                                <span lang="ru">Порог частиц, при котором включается поведение рендера под давлением
+                                    (упрощение).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>performance.fastRectRadiusThreshold</code></td>
+                            <td><span class="badge val-num">1.45</span></td>
+                            <td>
+                                <span lang="en">Radius threshold used by the fast rectangle rendering path.</span>
+                                <span lang="ru">Порог радиуса для быстрого пути рендера через прямоугольники.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="rocket">Rocket <span lang="ru">(Ракета)</span></h2>
+            <p lang="en">These fields are part of the persistent rocket config stored on the engine.</p>
+            <p lang="ru">Эти поля являются частью постоянной конфигурации ракеты, хранящейся в движке.</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>rocket.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td>
+                                <span lang="en">Enables rocket flight. <code>false</code> for direct burst with no
+                                    trail.</span>
+                                <span lang="ru">Включает полет ракеты. <code>false</code> для прямого взрыва без
+                                    следа.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.colorMode</code></td>
+                            <td><span class="badge val-str">'palette'</span></td>
+                            <td>
+                                <span lang="en">Color source: <code>'palette'</code>, <code>'rgb'</code>,
+                                    <code>'single'</code>.</span>
+                                <span lang="ru">Источник цвета: <code>'palette'</code>, <code>'rgb'</code>,
+                                    <code>'single'</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.singleColor</code></td>
+                            <td><span class="badge val-str">'#ffd166'</span></td>
+                            <td>
+                                <span lang="en">Rocket color used when <code>colorMode</code> is
+                                    <code>'single'</code>.</span>
+                                <span lang="ru">Цвет ракеты при <code>colorMode: 'single'</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.color</code></td>
+                            <td>alias <code>singleColor</code></td>
+                            <td>
+                                <span lang="en">Alternate input name.</span>
+                                <span lang="ru">Альтернативное имя ввода.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.palette</code></td>
+                            <td><span class="badge val-null">null</span></td>
+                            <td>
+                                <span lang="en">Rocket palette. If omitted, falls back to the current <code>burst</code>
+                                    palette.</span>
+                                <span lang="ru">Палитра ракеты. Если нет, используется текущая палитра
+                                    <code>burst</code>.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.streakLength</code></td>
+                            <td><span class="badge val-num">5</span></td>
+                            <td>
+                                <span lang="en">Visible rocket streak length.</span>
+                                <span lang="ru">Видимая длина шлейфа ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.finalStreakLength</code></td>
+                            <td><span class="badge val-num">48</span></td>
+                            <td>
+                                <span lang="en">Final streak length at the end of the rocket path.</span>
+                                <span lang="ru">Финальная длина шлейфа в конце пути.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.thickness</code></td>
+                            <td><span class="badge val-num">1.35</span></td>
+                            <td>
+                                <span lang="en">Rocket streak thickness.</span>
+                                <span lang="ru">Толщина шлейфа ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.speed</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td>
+                                <span lang="en">Flight speed (px/s). If > 0, takes priority over duration.</span>
+                                <span lang="ru">Скорость полета (px/s). Если > 0, имеет приоритет над duration.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Rocket Launch Extras <span lang="ru">(Экстра параметры при запуске)</span></h3>
+            <p lang="en">These fields are accepted when launching rockets, but they are <strong>not stored</strong> as
+                persistent engine defaults.</p>
+            <p lang="ru">Принимаются при запуске ракет, но <strong>не сохраняются</strong> в движке.</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>rocket.durationMin</code></td>
+                            <td><span class="badge val-num">0.7</span> s</td>
+                            <td>
+                                <span lang="en">Lower bound for duration when speed is 0.</span>
+                                <span lang="ru">Нижняя граница времени полета (если speed = 0).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.durationMax</code></td>
+                            <td><span class="badge val-num">1.0</span> s</td>
+                            <td>
+                                <span lang="en">Upper bound for duration when speed is 0.</span>
+                                <span lang="ru">Верхняя граница времени полета (если speed = 0).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade</code></td>
+                            <td><span lang="en">see below</span><span lang="ru">см. ниже</span></td>
+                            <td>
+                                <span lang="en">Nested cascade behavior for rocket launches.</span>
+                                <span lang="ru">Вложенное поведение каскада.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Rocket Cascade (rocket.cascade.*)</h4>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>rocket.cascade.mode</code></td>
+                            <td><span class="badge val-str">'burst'</span></td>
+                            <td>
+                                <span lang="en">Payload type: <code>'burst'</code> (follow-ups) or <code>'rocket'</code>
+                                    (child rockets).</span>
+                                <span lang="ru">Тип каскада: <code>'burst'</code> (серия взрывов) или
+                                    <code>'rocket'</code> (дочерние ракеты).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.bursts</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td>
+                                <span lang="en">Number of follow-up bursts or child rockets.</span>
+                                <span lang="ru">Кол-во последующих взрывов или дочерних ракет.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childBursts</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td>
+                                <span lang="en">Number of follow-up cascade bursts each child rocket emits after its own
+                                    main target burst.</span>
+                                <span lang="ru">Количество последующих каскадных взрывов, которые дочерняя ракета дает
+                                    после своего основного взрыва в цели.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childSpeedMin</code></td>
+                            <td><span class="badge val-null">omitted</span></td>
+                            <td>
+                                <span lang="en">Lower bound for child rocket speed.</span>
+                                <span lang="ru">Мин. скорость дочерней ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childSpeedMax</code></td>
+                            <td><span class="badge val-null">omitted</span></td>
+                            <td>
+                                <span lang="en">Upper bound for child rocket speed.</span>
+                                <span lang="ru">Макс. скорость дочерней ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childDurationMin</code></td>
+                            <td><span class="badge val-null">omitted</span></td>
+                            <td>
+                                <span lang="en">Lower bound for child rocket duration.</span>
+                                <span lang="ru">Мин. время жизни дочерней ракеты (если speed не задан).</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childDurationMax</code></td>
+                            <td><span class="badge val-null">omitted</span></td>
+                            <td>
+                                <span lang="en">Upper bound for child rocket duration.</span>
+                                <span lang="ru">Макс. время жизни дочерней ракеты.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childDirectionDeg</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td>
+                                <span lang="en">Direction for child rocket fan-out.</span>
+                                <span lang="ru">Направление разлета дочерних ракет.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.childConeDeg</code></td>
+                            <td><span class="badge val-num">360</span></td>
+                            <td>
+                                <span lang="en">Spread width for child rocket fan-out.</span>
+                                <span lang="ru">Ширина сектора разлета дочерних ракет.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.delay</code></td>
+                            <td><span class="badge val-num">48</span> ms</td>
+                            <td>
+                                <span lang="en">Delay between follow-up cascade launches.</span>
+                                <span lang="ru">Задержка между запусками каскада.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.spreadX</code></td>
+                            <td><span class="badge val-num">18</span></td>
+                            <td>
+                                <span lang="en">Horizontal spread for cascade targets.</span>
+                                <span lang="ru">Горизонтальный разброс целей каскада.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.spreadY</code></td>
+                            <td><span class="badge val-num">18</span></td>
+                            <td>
+                                <span lang="en">Vertical spread for cascade targets.</span>
+                                <span lang="ru">Вертикальный разброс целей каскада.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.burst</code></td>
+                            <td><span class="badge val-str">inherits</span></td>
+                            <td>
+                                <span lang="en">Burst overrides for <code>burst</code>-mode cascades.</span>
+                                <span lang="ru">Переопределения взрыва для <code>burst</code>-каскадов.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>rocket.cascade.child</code></td>
+                            <td><span class="badge val-str">derived</span></td>
+                            <td>
+                                <span lang="en">Child rocket overrides when <code>mode</code> is
+                                    <code>'rocket'</code>.</span>
+                                <span lang="ru">Переопределения для дочерних ракет (при <code>mode</code>:
+                                    <code>'rocket'</code>).</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="tail-embers">Rocket Tail Embers <span lang="ru">(Дымный след)</span></h2>
+            <p lang="en">The white ember plume behind the rocket. Tune brightness, fade, and spread; there is no
+                separate color palette.</p>
+            <p lang="ru">Белый шлейф искр за ракетой. Цвет не настраивается (только яркость, затухание и разброс).</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>rocketTailEmbers.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td><span lang="en">Enables the ember plume behind the rocket.</span><span
+                                    lang="ru">Включает шлейф (plume) за ракетой.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.count</code></td>
+                            <td><span class="badge val-num">6</span></td>
+                            <td><span lang="en">Number of embers spawned.</span><span lang="ru">Количество генерируемых
+                                    искр.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.brightness</code></td>
+                            <td><span class="badge val-num">2</span></td>
+                            <td><span lang="en">Ember brightness multiplier.</span><span lang="ru">Множитель
+                                    яркости.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.fade</code></td>
+                            <td><span class="badge val-num">1</span></td>
+                            <td><span lang="en">Ember fade rate.</span><span lang="ru">Скорость затухания.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.spreadX</code></td>
+                            <td><span class="badge val-num">1.5</span></td>
+                            <td><span lang="en">Horizontal spread of the plume.</span><span lang="ru">Горизонтальный
+                                    разброс искр.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.spreadY</code></td>
+                            <td><span class="badge val-num">40</span></td>
+                            <td><span lang="en">Vertical spread of the plume.</span><span lang="ru">Вертикальный разброс
+                                    искр.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.speed</code></td>
+                            <td><span class="badge val-num">2</span></td>
+                            <td><span lang="en">Ember speed.</span><span lang="ru">Скорость искр шлейфа.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>rocketTailEmbers.size</code></td>
+                            <td><span class="badge val-num">0.6</span></td>
+                            <td><span lang="en">Ember size.</span><span lang="ru">Размер искр шлейфа.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="burst-forms">Burst Forms <span lang="ru">(Частицы-формы / Конфетти)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>burstForms.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td><span lang="en">Enables form particles.</span><span lang="ru">Включает
+                                    частицы-формы.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.palette</code></td>
+                            <td><span class="badge val-str">DEFAULT</span></td>
+                            <td><span lang="en">Shared <code>burst</code> palette (fallback for other
+                                    layers).</span><span lang="ru">Общая <code>burst</code> палитра. Служит фоллбэком
+                                    для других слоев.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.count</code></td>
+                            <td><span class="badge val-num">27</span></td>
+                            <td><span lang="en">Number of form particles.</span><span lang="ru">Кол-во
+                                    частиц-форм.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.speedMin</code></td>
+                            <td><span class="badge val-num">100</span></td>
+                            <td><span lang="en">Lower speed bound.</span><span lang="ru">Мин. скорость разлета.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.speedMax</code></td>
+                            <td><span class="badge val-num">250</span></td>
+                            <td><span lang="en">Upper speed bound.</span><span lang="ru">Макс. скорость разлета.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.directionDeg</code></td>
+                            <td><span class="badge val-num">90</span></td>
+                            <td><span lang="en">Center direction for the burst sector.</span><span lang="ru">Центральное
+                                    направление сектора разлета.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.coneDeg</code></td>
+                            <td><span class="badge val-num">360</span></td>
+                            <td><span lang="en">Full width of the burst sector.</span><span lang="ru">Ширина сектора
+                                    разлета (360 = круг).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.gravity</code></td>
+                            <td><span class="badge val-num">90</span></td>
+                            <td><span lang="en">Gravity for form particles.</span><span lang="ru">Гравитация,
+                                    действующая на формы.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.lifeMin</code></td>
+                            <td><span class="badge val-num">0.6</span> s</td>
+                            <td><span lang="en">Lower life bound.</span><span lang="ru">Мин. время жизни форм.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.lifeMax</code></td>
+                            <td><span class="badge val-num">1.5</span> s</td>
+                            <td><span lang="en">Upper life bound.</span><span lang="ru">Макс. время жизни форм.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.sizeMin</code></td>
+                            <td><span class="badge val-num">1.5</span></td>
+                            <td><span lang="en">Lower size bound.</span><span lang="ru">Мин. размер.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.sizeMax</code></td>
+                            <td><span class="badge val-num">2.5</span></td>
+                            <td><span lang="en">Upper size bound.</span><span lang="ru">Макс. размер.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.spin</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td><span lang="en">Maximum spin amount for confetti-style rotation.</span><span
+                                    lang="ru">Максимальная сила вращения в стиле конфетти (флаттер).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.spinCoverage</code></td>
+                            <td><span class="badge val-num">1</span></td>
+                            <td><span lang="en">Approximate fraction of each particle's lifetime that can spend
+                                    rotating, with random start and stop windows (0 - 1).</span><span lang="ru">Примерная
+                                    доля жизни каждой частицы, которую она может провести во вращении, со случайными
+                                    окнами старта и остановки (0 - 1).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.spinDuration</code></td>
+                            <td><span class="badge val-num">2</span> s</td>
+                            <td><span lang="en">Average active spin window length. Higher values allow longer
+                                    continuous rotations.</span><span lang="ru">Средняя длина активного окна вращения.
+                                    Высокие значения дают более длинные непрерывные серии вращения.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.spinPause</code></td>
+                            <td><span class="badge val-num">2</span> s</td>
+                            <td><span lang="en">Average pause between active spin windows.</span><span
+                                    lang="ru">Средняя пауза между активными окнами вращения.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.highlight</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td><span lang="en">Specular-style highlight strength for spinning form particles. It
+                                    mixes the particle color toward white at the highlight phase.</span><span
+                                    lang="ru">Сила блика для вращающихся form-частиц. В фазе блика цвет частицы
+                                    смешивается с белым.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.highlightAngleDeg</code></td>
+                            <td><span class="badge val-num">0</span> deg</td>
+                            <td><span lang="en">Spin phase angle where the main highlight appears.</span><span
+                                    lang="ru">Фазовый угол вращения, при котором появляется основной блик.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.highlightWidth</code></td>
+                            <td><span class="badge val-num">0.18</span></td>
+                            <td><span lang="en">Highlight window width from sharp to soft (0 - 1).</span><span
+                                    lang="ru">Ширина окна блика: от резкого к мягкому (0 - 1).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.wobble</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td><span lang="en">Side-to-side drift amount.</span><span lang="ru">Раскачивание (дрифт) из
+                                    стороны в сторону.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.shape</code></td>
+                            <td><span class="badge val-str">'circle'</span></td>
+                            <td><span lang="en">Shape: <code>'circle'</code>, <code>'square'</code>,
+                                    <code>'rectangle'</code>, <code>'glyph'</code>, <code>'mix'</code>, or
+                                    combined.</span><span lang="ru">Форма: <code>'circle'</code>, <code>'square'</code>,
+                                    <code>'rectangle'</code>, <code>'glyph'</code>, <code>'mix'</code> или их
+                                    комбинации.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.glyph</code></td>
+                            <td><span class="badge val-str">'★'</span></td>
+                            <td><span lang="en">Glyph string used when shape is <code>'glyph'</code> or
+                                    <code>'mix'</code>.</span><span lang="ru">Строка символов при shape:
+                                    <code>'glyph'</code> или <code>'mix'</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.colorMode</code></td>
+                            <td><span class="badge val-str">'palette'</span></td>
+                            <td><span lang="en">Color mode: <code>'palette'</code>, <code>'rgb'</code>,
+                                    <code>'single'</code>.</span><span lang="ru">Цветовой режим: <code>'palette'</code>,
+                                    <code>'rgb'</code>, <code>'single'</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.singleColor</code></td>
+                            <td><span class="badge val-str">'#ffd166'</span></td>
+                            <td><span lang="en">Color used when mode is <code>'single'</code>.</span><span
+                                    lang="ru">Цвет при <code>colorMode: 'single'</code>.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="burst-sparks">Burst Sparks <span lang="ru">(Искры взрыва)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>burstSparks.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td><span lang="en">Enables spark particles.</span><span lang="ru">Включает
+                                    частицы-искры.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.palette</code></td>
+                            <td><span class="badge val-null">null</span></td>
+                            <td><span lang="en">Spark palette. Falls back to <code>burstForms</code>
+                                    palette.</span><span lang="ru">Палитра. Если опущена, берется из
+                                    <code>burstForms</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.count</code></td>
+                            <td><span class="badge val-num">80</span></td>
+                            <td><span lang="en">Number of spark particles.</span><span lang="ru">Кол-во
+                                    частиц-искр.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.length</code></td>
+                            <td><span class="badge val-num">27</span></td>
+                            <td><span lang="en">Base spark trail length.</span><span lang="ru">Базовая длина шлейфа
+                                    искры.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.tailScale</code></td>
+                            <td><span class="badge val-num">1.5</span></td>
+                            <td><span lang="en">Spark trail-length override (independent from
+                                    <code>sizeScale</code>).</span><span lang="ru">Переопределение длины шлейфа (не
+                                    зависит от <code>sizeScale</code>).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.thickness</code></td>
+                            <td><span class="badge val-num">1.3</span></td>
+                            <td><span lang="en">Spark trail thickness.</span><span lang="ru">Толщина шлейфа
+                                    искры.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.speedMin</code></td>
+                            <td><span class="badge val-num">0</span></td>
+                            <td><span lang="en">Lower speed bound.</span><span lang="ru">Мин. скорость разлета.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.speedMax</code></td>
+                            <td><span class="badge val-num">320</span></td>
+                            <td><span lang="en">Upper speed bound.</span><span lang="ru">Макс. скорость разлета.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.directionDeg</code></td>
+                            <td><span class="badge val-num">90</span></td>
+                            <td><span lang="en">Center direction for the spark sector.</span><span lang="ru">Центральное
+                                    направление сектора разлета.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.coneDeg</code></td>
+                            <td><span class="badge val-num">360</span></td>
+                            <td><span lang="en">Full width of the spark sector.</span><span lang="ru">Ширина сектора
+                                    разлета (360 = круг).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.gravity</code></td>
+                            <td><span class="badge val-num">50</span></td>
+                            <td><span lang="en">Gravity for sparks.</span><span lang="ru">Гравитация.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.lifeMin</code></td>
+                            <td><span class="badge val-num">0.5</span> s</td>
+                            <td><span lang="en">Lower life bound.</span><span lang="ru">Мин. время жизни.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.lifeMax</code></td>
+                            <td><span class="badge val-num">1.6</span> s</td>
+                            <td><span lang="en">Upper life bound.</span><span lang="ru">Макс. время жизни.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.shape</code></td>
+                            <td><span class="badge val-str">'fade'</span></td>
+                            <td><span lang="en">Spark shape: <code>'uniform'</code>, <code>'spindle'</code>,
+                                    <code>'fade'</code>.</span><span lang="ru">Форма искры: <code>'uniform'</code>,
+                                    <code>'spindle'</code>, <code>'fade'</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.colorMode</code></td>
+                            <td><span class="badge val-str">'palette'</span></td>
+                            <td><span lang="en">Color mode: <code>'palette'</code>, <code>'rgb'</code>,
+                                    <code>'single'</code>.</span><span lang="ru">Цветовой режим: <code>'palette'</code>,
+                                    <code>'rgb'</code>, <code>'single'</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstSparks.singleColor</code></td>
+                            <td><span class="badge val-str">'#ffd166'</span></td>
+                            <td><span lang="en">Color used when mode is <code>'single'</code>.</span><span
+                                    lang="ru">Цвет при <code>colorMode: 'single'</code>.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="center-flash">Burst Center Flash <span lang="ru">(Центральная вспышка)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>burstCenterFlash.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td><span lang="en">Enables the center flash.</span><span lang="ru">Включает центральную
+                                    вспышку.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.startSize</code></td>
+                            <td><span class="badge val-num">35</span></td>
+                            <td><span lang="en">Starting flash size.</span><span lang="ru">Начальный размер
+                                    вспышки.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.endSize</code></td>
+                            <td><span class="badge val-num">85</span></td>
+                            <td><span lang="en">Ending flash size.</span><span lang="ru">Конечный размер вспышки.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.peakAlpha</code></td>
+                            <td><span class="badge val-num">0.3</span></td>
+                            <td><span lang="en">Peak alpha of the flash.</span><span lang="ru">Пиковая прозрачность
+                                    (alpha).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.attack</code></td>
+                            <td><span class="badge val-num">0.1</span></td>
+                            <td><span lang="en">Flash attack time.</span><span lang="ru">Время разгорания
+                                    вспышки.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.fade</code></td>
+                            <td><span class="badge val-num">0.1</span></td>
+                            <td><span lang="en">Flash fade time.</span><span lang="ru">Время затухания вспышки.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.colorMode</code></td>
+                            <td><span class="badge val-str">'rgb'</span></td>
+                            <td><span lang="en">Flash color mode: <code>'palette'</code>, <code>'rgb'</code>,
+                                    <code>'single'</code>.</span><span lang="ru">Цветовой режим: <code>'palette'</code>,
+                                    <code>'rgb'</code>, <code>'single'</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.color</code></td>
+                            <td><span class="badge val-str">'#00ffee'</span></td>
+                            <td><span lang="en">Flash color used in <code>'single'</code>-color mode or as
+                                    fallback.</span><span lang="ru">Цвет вспышки (при <code>'single'</code> или как
+                                    fallback).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstCenterFlash.innerStop</code></td>
+                            <td><span class="badge val-num">0.3</span></td>
+                            <td><span lang="en">Inner gradient stop for the flash.</span><span lang="ru">Внутренний стоп
+                                    градиента вспышки.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="twinkle-cloud">Burst Twinkle Cloud <span lang="ru">(Мерцающее облако)</span></h2>
+            <p lang="en">These particles are white. Tune brightness, size, duration, and spread instead of color.</p>
+            <p lang="ru">Эти частицы всегда белые. Настраивается яркость, размер, длительность и разброс.</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>burstTwinkleCloud.enabled</code></td>
+                            <td><span class="badge val-bool">true</span></td>
+                            <td><span lang="en">Enables the twinkle cloud.</span><span lang="ru">Включает мерцающее
+                                    облако.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.count</code></td>
+                            <td><span class="badge val-num">240</span></td>
+                            <td><span lang="en">Number of twinkles.</span><span lang="ru">Кол-во мерцающих частиц
+                                    (twinkles).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.radius</code></td>
+                            <td><span class="badge val-num">110</span></td>
+                            <td><span lang="en">Cloud radius.</span><span lang="ru">Радиус облака.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.startDelay</code></td>
+                            <td><span class="badge val-num">0.4</span> s</td>
+                            <td><span lang="en">Delay before twinkles begin.</span><span lang="ru">Задержка перед
+                                    появлением.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.duration</code></td>
+                            <td><span class="badge val-num">0.5</span> s</td>
+                            <td><span lang="en">Cloud duration.</span><span lang="ru">Общая длительность облака.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.twinkleLife</code></td>
+                            <td><span class="badge val-num">0.2</span> s</td>
+                            <td><span lang="en">Life of an individual twinkle.</span><span lang="ru">Время жизни
+                                    отдельной блестки.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.brightness</code></td>
+                            <td><span class="badge val-num">2</span></td>
+                            <td><span lang="en">Twinkle brightness multiplier.</span><span lang="ru">Множитель яркости
+                                    блесток.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.size</code></td>
+                            <td><span class="badge val-num">1.2</span></td>
+                            <td><span lang="en">Twinkle size.</span><span lang="ru">Размер блестки.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstTwinkleCloud.spawnSpread</code></td>
+                            <td><span class="badge val-num">1</span></td>
+                            <td><span lang="en">Spawn spread for the cloud.</span><span lang="ru">Степень разброса
+                                    частиц в облаке.</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="shortcuts">Helper Shortcuts <span lang="ru">(Методы-сокращения)</span></h2>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Helper</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>boom(x, y, options?)</code></td>
+                            <td><span lang="en">Alias of <code>launchRocketAt(x, y, options?)</code>.</span><span
+                                    lang="ru">Алиас для <code>launchRocketAt(x, y, options?)</code>.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burst(x, y, options?)</code></td>
+                            <td><span lang="en">Direct burst at a target point without rocket flight.</span><span
+                                    lang="ru">Прямой взрыв в точке (без полета ракеты).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>confetti(x, y, options?)</code></td>
+                            <td><span lang="en">Recipe helper with rocket disabled and confetti defaults.</span><span
+                                    lang="ru">Конфетти (с отключенной ракетой и предустановками для бумажных
+                                    частиц).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>launchPresetAt(name, x, y, options?)</code></td>
+                            <td><span lang="en">Resolves a named preset first, then launches it at the requested
+                                    point; burst-mode presets fire as direct bursts, rocket-mode presets keep their
+                                    rocket flight, and it honors <code>count</code> for repeated same-point
+                                    launches.</span><span lang="ru">Сначала разрешает именованный пресет, затем
+                                    запускает его в заданной точке; burst-режимы работают как прямые взрывы,
+                                    rocket-режимы сохраняют полет ракеты, и учитывается <code>count</code> для
+                                    повторного запуска в одной точке.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>launchRocketAt(x, y, options?)</code></td>
+                            <td><span lang="en">Launches a rocket toward a target point.</span><span lang="ru">Запускает
+                                    ракету к целевой точке (движок сам выбирает старт).</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>launchRocketFromTo(x1,y1, x2,y2, opt?)</code></td>
+                            <td><span lang="en">Launches a rocket from a fixed start point to a fixed target
+                                    point.</span><span lang="ru">Запуск ракеты из фиксированной точки старта к
+                                    цели.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>launchRocket(options?)</code></td>
+                            <td><span lang="en">Launches rockets as a batch. Use <code>count</code> to control the batch
+                                    size.</span><span lang="ru">Массовый запуск ракет (можно использовать
+                                    <code>count</code> для пакета).</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="presets">Presets <span lang="ru">(Готовые пресеты)</span></h2>
+            <p lang="en">These are authored bundles, not the same thing as raw engine defaults.</p>
+            <p lang="ru">Это авторские сборки настроек, отличающиеся от сырых дефолтов движка.</p>
+            <p lang="en">This table covers the engine start presets used by <code>startPreset(name)</code>. Point-based
+                launch presets are listed below and launched through <code>launchPresetAt(name, x, y)</code>.</p>
+            <p lang="ru">Эта таблица описывает стартовые пресеты движка, которые используются в
+                <code>startPreset(name)</code>. Точечные launch-пресеты перечислены ниже и запускаются через
+                <code>launchPresetAt(name, x, y)</code>.</p>
+            <div class="preset-preview-bar" aria-live="polite">
+                <button class="preset-stop-button" id="stopPresetPreview" type="button">
+                    <span lang="en">Stop preview</span>
+                    <span lang="ru">Остановить preview</span>
+                </button>
+                <p class="preset-preview-status" id="presetPreviewStatus">
+                    <span lang="en">Preview is idle.</span>
+                    <span lang="ru">Preview не запущен.</span>
+                </p>
+            </div>
+            <div class="table-container">
+                <table class="table-standard table-presets">
+                    <thead>
+                        <tr>
+                            <th>Preset</th>
+                            <th><span lang="en">Intent</span><span lang="ru">Назначение</span></th>
+                            <th>Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge val-str">'base'</span></td>
+                            <td><span lang="en">One direct burst.</span><span lang="ru">Один прямой взрыв.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="engine"
+                                    data-preset-name="base">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'rocket'</span></td>
+                            <td><span lang="en">Two rockets with visible flight and tail embers.</span>
+                                <span lang="ru">Две ракеты с видимым полетом и шлейфом.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="engine"
+                                    data-preset-name="rocket">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'cascade'</span></td>
+                            <td><span lang="en">Two rockets; each rocket emits three follow-up cascade
+                                    bursts.</span><span lang="ru">Две ракеты; каждая создает три последующих каскадных
+                                    взрыва.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="engine"
+                                    data-preset-name="cascade">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'finale'</span></td>
+                            <td><span lang="en">Dense finale with twenty rockets across a short show window.</span><span
+                                    lang="ru">Плотный финал: двадцать ракет за короткий промежуток.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="engine"
+                                    data-preset-name="finale">Run</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p lang="en">The four engine presets above are scheduled scene starters. They choose their launch targets
+                internally; when a preset uses rocket flight, the rocket start point is also selected by the runtime.
+                Use them when you want a ready-made show rather than a point-targeted reaction.</p>
+            <p lang="ru">Четыре engine-пресета выше запускают готовую сцену по расписанию. Они сами выбирают точки
+                целей; если пресет использует полет ракеты, точка старта ракеты тоже выбирается runtime. Используйте их,
+                когда нужен готовый эффект, а не реакция в конкретной точке.</p>
+
+            <h3>Launch presets</h3>
+            <div class="table-container">
+                <table class="table-standard table-presets">
+                    <thead>
+                        <tr>
+                            <th>Preset</th>
+                            <th><span lang="en">Intent</span><span lang="ru">Назначение</span></th>
+                            <th>Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge val-str">'button-click'</span></td>
+                            <td><span lang="en">One compact direct spark burst with 30 sparks and no rocket.</span><span
+                                    lang="ru">Один компактный прямой burst: 30 искр, без ракеты.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="button-click">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'success-burst'</span></td>
+                            <td><span lang="en">One direct success burst with 30 glyph forms, 30 sparks, and a center
+                                    flash.</span><span lang="ru">Один прямой success-burst: 30 glyph-форм, 30 искр и
+                                    центральная вспышка.</span>
+                            </td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="success-burst">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'win-celebration'</span></td>
+                            <td><span lang="en">One rocket that spawns three child rockets; each child rocket creates
+                                    its own burst plus one follow-up cascade burst.</span><span lang="ru">Одна ракета
+                                    создает три дочерние ракеты; каждая дочерняя ракета дает свой основной взрыв плюс
+                                    один последующий каскадный взрыв.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="win-celebration">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'achievement-unlock'</span></td>
+                            <td><span lang="en">One wide confetti fan made from three close direct bursts with different
+                                    directions.</span><span lang="ru">Один широкий веер конфетти, собранный из трех
+                                    близких прямых burst-запусков с разными направлениями.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="achievement-unlock">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'confetti-pop'</span></td>
+                            <td><span lang="en">Two side cannons, each launching a 110-piece confetti burst.</span><span
+                                    lang="ru">Две боковые пушки, каждая запускает burst из 110 частиц конфетти.</span>
+                            </td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="confetti-pop">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'purchase-success'</span></td>
+                            <td><span lang="en">One Rocket Bloom launch: a single rocket opens into 16 child rockets;
+                                    each child creates its own compact spark burst plus one follow-up cascade
+                                    burst.</span><span lang="ru">Один запуск Rocket Bloom: одиночная ракета
+                                    раскрывается в 16 дочерних ракет; каждая дочерняя дает свой компактный spark-взрыв
+                                    плюс один последующий каскадный взрыв.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="purchase-success">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'victory-finale'</span></td>
+                            <td><span lang="en">One finale rocket that spawns six child rockets; each child rocket
+                                    creates its own burst plus three follow-up cascade bursts.</span><span
+                                    lang="ru">Одна финальная ракета создает шесть дочерних ракет; каждая дочерняя
+                                    ракета дает свой основной взрыв плюс три последующих каскадных взрыва.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="victory-finale">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'snowfall'</span></td>
+                            <td><span lang="en">Continuous falling glyph scene: 6 flakes per wave, repeating until the
+                                    engine is stopped.</span><span lang="ru">Непрерывная сцена падающих glyph-частиц: 6
+                                    снежинок за волну, повторяется до остановки engine.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="snowfall">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'leaf-fall'</span></td>
+                            <td><span lang="en">Continuous falling UTF leaf scene: 5 warm leaf glyphs per wave,
+                                    repeating until the engine is stopped.</span><span lang="ru">Непрерывный листопад
+                                    из UTF-глифов: 5 теплых листьев за волну, повторяется до остановки engine.</span>
+                            </td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="leaf-fall">Run</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge val-str">'ambient-sparkle'</span></td>
+                            <td><span lang="en">Continuous star-like sparkle background, refreshed with two
+                                    twinkle-cloud pulses until the engine is stopped.</span><span lang="ru">Непрерывный
+                                    фон из мерцающих звезд: два twinkle-cloud импульса повторяются до остановки
+                                    engine.</span></td>
+                            <td><button class="preset-preview-button" type="button" data-preset-kind="launch"
+                                    data-preset-name="ambient-sparkle">Run</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="tuning-order">Practical tuning order <span lang="ru">(Порядок настройки)</span></h2>
+            <p lang="en">If you only want to change one thing at a time, tune in this order:</p>
+            <p lang="ru">Если вы хотите менять настройки поэтапно (по одной вещи за раз), следуйте этому порядку:</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th><span lang="en">What to touch first</span><span lang="ru">Что изменять первым</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1</strong></td>
+                            <td><code>rocket.enabled</code>, <code>burstForms.enabled</code>,
+                                <code>burstSparks.enabled</code>, <code>burstCenterFlash.enabled</code>,
+                                <code>burstTwinkleCloud.enabled</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>2</strong></td>
+                            <td><code>burstForms.count</code>, <code>burstSparks.count</code>,
+                                <code>burstTwinkleCloud.count</code>, <code>rocketTailEmbers.count</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>3</strong></td>
+                            <td><code>rocket.colorMode</code>, <code>burstForms.colorMode</code>,
+                                <code>burstSparks.colorMode</code>, <code>burstCenterFlash.colorMode</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>4</strong></td>
+                            <td><code>rocket.speed</code>, <code>rocket.durationMin</code>,
+                                <code>rocket.durationMax</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>5</strong></td>
+                            <td><code>rocket.cascade.*</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>6</strong></td>
+                            <td><code>timeScale</code>, <code>sizeScale</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>7</strong></td>
+                            <td>
+                                <span lang="en"><code>performance.*</code> only if you are chasing a specific load
+                                    issue</span>
+                                <span lang="ru"><code>performance.*</code> (Только если есть проблемы с
+                                    производительностью)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const html = document.documentElement;
+
+            // --- Language Logic ---
+            const langBtns = document.querySelectorAll('.lang-btn');
+            const savedLang = localStorage.getItem('fw-doc-lang') || 'en';
+            setLanguage(savedLang);
+
+            langBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetLang = e.target.getAttribute('data-target-lang');
+                    setLanguage(targetLang);
+                });
+            });
+
+            function setLanguage(lang) {
+                html.setAttribute('data-lang', lang);
+                localStorage.setItem('fw-doc-lang', lang);
+
+                langBtns.forEach(btn => {
+                    if (btn.getAttribute('data-target-lang') === lang) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+
+            // --- Theme Logic ---
+            const themeBtn = document.getElementById('theme-btn');
+
+            // Check local storage or system preference
+            const savedTheme = localStorage.getItem('fw-doc-theme');
+            const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme ? savedTheme : (sysDark ? 'dark' : 'light');
+
+            setTheme(initialTheme);
+
+            themeBtn.addEventListener('click', () => {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                setTheme(newTheme);
+            });
+
+            function setTheme(theme) {
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('fw-doc-theme', theme);
+            }
+        });
+    </script>
+    <script type="module">
+        import { createFireworksEngine } from '../src/index.js';
+
+        const previewStatus = document.getElementById('presetPreviewStatus');
+        const stopPreviewButton = document.getElementById('stopPresetPreview');
+        const previewButtons = document.querySelectorAll('.preset-preview-button');
+        const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+
+        const previewEngine = createFireworksEngine({
+            canvas: {
+                appendTarget: document.body,
+                zIndex: 2000,
+            },
+        });
+
+        function resolvePreviewPoint() {
+            return {
+                x: window.innerWidth * 0.5,
+                y: Math.max(160, window.innerHeight * 0.42),
+            };
+        }
+
+        function isRussian() {
+            return document.documentElement.getAttribute('data-lang') === 'ru';
+        }
+
+        function setPreviewStatus(messageEn, messageRu = messageEn) {
+            if (!previewStatus) {
+                return;
+            }
+
+            previewStatus.textContent = isRussian() ? messageRu : messageEn;
+        }
+
+        function stopPreview() {
+            previewEngine.stop(true);
+            setPreviewStatus('Preview stopped.', 'Preview остановлен.');
+        }
+
+        function runPresetPreview(kind, name) {
+            if (prefersReducedMotion?.matches) {
+                stopPreview();
+                setPreviewStatus(
+                    'Preview skipped because reduced motion is enabled.',
+                    'Preview пропущен: включено уменьшение движения.',
+                );
+                return;
+            }
+
+            previewEngine.stop(true);
+
+            let launched = false;
+            if (kind === 'engine') {
+                launched = previewEngine.startPreset(name);
+            } else {
+                const { x, y } = resolvePreviewPoint();
+                launched = previewEngine.launchPresetAt(name, x, y);
+            }
+
+            setPreviewStatus(
+                launched ? `Running preview: ${name}` : `Could not run preview: ${name}`,
+                launched ? `Запущен preview: ${name}` : `Не удалось запустить preview: ${name}`,
+            );
+        }
+
+        previewButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                runPresetPreview(button.dataset.presetKind, button.dataset.presetName);
+            });
+        });
+
+        stopPreviewButton?.addEventListener('click', stopPreview);
+        window.addEventListener('beforeunload', () => {
+            previewEngine.destroy();
+        });
+    </script>
+</body>
+
+</html>

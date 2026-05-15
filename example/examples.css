@@ -1,0 +1,470 @@
+:root {
+    color-scheme: dark;
+    --bg-top: #13203d;
+    --bg-bottom: #040714;
+    --panel: rgba(8, 14, 30, 0.84);
+    --panel-soft: rgba(255, 255, 255, 0.03);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --panel-shadow: 0 18px 44px rgba(1, 4, 16, 0.32);
+    --text: #e2e8f0;
+    --muted: rgba(191, 219, 254, 0.76);
+    --accent: #f6c344;
+    --accent-strong: #ff8a3d;
+    --button-width: 132px;
+    --hero-button-width: 264px;
+    --button-height: 38px;
+    --button-radius: 12px;
+    --editor-font-size: 0.86rem;
+    --editor-line-height: 1.5;
+    font-family: "Segoe UI", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top, rgba(58, 102, 191, 0.34), transparent 36%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+}
+
+button {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: var(--button-width);
+    flex: 0 0 var(--button-width);
+    border: 0;
+    border-radius: var(--button-radius);
+    padding: 0 14px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+.editorInput:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.heroLink,
+.runButton,
+.resetButton,
+.copySnippetButton,
+.stopButton,
+.toggleButton {
+    transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.heroLink:hover,
+.runButton:hover,
+.resetButton:hover,
+.copySnippetButton:hover,
+.stopButton:hover,
+.toggleButton:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+}
+
+.shell {
+    width: min(1160px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 24px 0 44px;
+    display: grid;
+    gap: 18px;
+}
+
+.hero,
+.recipeCard {
+    position: relative;
+    z-index: 1;
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    background: var(--panel);
+    box-shadow: var(--panel-shadow);
+}
+
+.hero {
+    padding: 20px 22px;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.eyebrow {
+    margin: 0;
+    justify-self: start;
+    align-self: start;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fde68a;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.28rem);
+    line-height: 1.02;
+}
+
+.heroActions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.heroLink {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: var(--hero-button-width);
+    flex: 0 0 var(--hero-button-width);
+    border-radius: var(--button-radius);
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fef3c7;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.heroStatus {
+    margin: 2px 0 0;
+    min-height: 1.45em;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.heroNote {
+    margin: 2px 0 0;
+    padding: 11px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    color: #f8fafc;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    background:
+        linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(244, 114, 182, 0.12)),
+        rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(251, 191, 36, 0.42);
+    border-left: 4px solid rgba(251, 191, 36, 0.92);
+    border-radius: 14px;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
+}
+
+.heroNoteBadge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.7em;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: rgba(251, 191, 36, 0.18);
+    color: #fde68a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.gallery {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 14px;
+}
+
+.sectionHeader {
+    padding: 4px 2px 0;
+    display: grid;
+    gap: 4px;
+}
+
+.sectionHeaderTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.sectionHeader h2,
+.recipeColumn h3 {
+    margin: 0;
+}
+
+.sectionHeader p,
+.recipeColumn p,
+.cardNote,
+.editorError {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.sectionHeader h2 {
+    font-size: 1.2rem;
+}
+
+.floatingMetricsWidget {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: 90;
+    min-width: 168px;
+    padding: 8px 10px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(2, 10, 26, 0.88);
+    box-shadow: 0 10px 24px rgba(1, 4, 16, 0.38);
+    backdrop-filter: blur(6px);
+}
+
+.floatingMetricsWidget.isDragging {
+    cursor: grabbing;
+    opacity: 0.94;
+}
+
+.floatingMetricsHandle {
+    margin: -2px -2px 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fde68a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.floatingMetricsRow {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.79rem;
+    line-height: 1.35;
+    font-weight: 600;
+}
+
+.floatingMetricsValue {
+    color: #fde68a;
+    font-variant-numeric: tabular-nums;
+}
+
+.floatingMetricsActions {
+    margin-top: 8px;
+}
+
+.floatingMetricsWidget .stopButton {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+}
+
+.recipeCard {
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+}
+
+.recipeTop {
+    display: grid;
+    grid-template-columns: minmax(288px, 320px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.recipeColumn {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    min-width: 0;
+}
+
+.recipeColumnLeft {
+    justify-items: center;
+    justify-content: center;
+}
+
+.recipeColumnRight {
+    min-width: 0;
+}
+
+.recipeTitleBlock {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+}
+
+.actionRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cardMeta {
+    display: grid;
+    gap: 6px;
+}
+
+.toggleGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.toggleButton {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: var(--button-width);
+    flex: 0 0 var(--button-width);
+    padding: 0 12px;
+    background: rgba(15, 23, 42, 0.88);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toggleButton.isActive {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    color: #1f2937;
+}
+
+.runButton {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: 96px;
+    flex: 0 0 96px;
+    background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 100%);
+    color: #04111f;
+}
+
+.resetButton {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: 96px;
+    flex: 0 0 96px;
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.copySnippetButton {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: 96px;
+    flex: 0 0 96px;
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stopButton {
+    min-height: var(--button-height);
+    height: var(--button-height);
+    width: 96px;
+    flex: 0 0 96px;
+    background: rgba(51, 16, 16, 0.9);
+    color: #fee2e2;
+    border: 1px solid rgba(254, 202, 202, 0.35);
+}
+
+.cardNote {
+    font-size: 0.94rem;
+}
+
+.editorShell {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: stretch;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(2, 6, 23, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.editorGutter {
+    margin: 0;
+    padding: 12px 8px 12px 10px;
+    background: rgba(15, 23, 42, 0.88);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(191, 219, 254, 0.52);
+    text-align: right;
+    user-select: none;
+    white-space: pre;
+    font-size: var(--editor-font-size);
+    line-height: var(--editor-line-height);
+    font-family: "Cascadia Code", "Consolas", monospace;
+}
+
+.editorInput {
+    width: 100%;
+    min-height: 176px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 0;
+    resize: vertical;
+    overflow: auto;
+    background: transparent;
+    color: #dbeafe;
+    font-size: var(--editor-font-size);
+    line-height: var(--editor-line-height);
+    font-family: "Cascadia Code", "Consolas", monospace;
+    white-space: pre;
+    tab-size: 4;
+}
+
+.editorInput:focus {
+    outline: none;
+}
+
+.editorError {
+    color: #fecaca;
+}
+
+@media (max-width: 820px) {
+    .shell {
+        width: min(100%, calc(100% - 18px));
+        padding-top: 18px;
+    }
+
+    .hero,
+    .recipeCard,
+    .editorShell {
+        border-radius: 14px;
+    }
+
+    .recipeTop {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .recipeColumnLeft {
+        justify-items: center;
+    }
+
+    .sectionHeaderTop {
+        flex-wrap: wrap;
+    }
+
+}

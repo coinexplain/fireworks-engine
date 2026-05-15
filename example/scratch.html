@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fireworks snippet check</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --panel: rgba(15, 23, 42, 0.84);
+            --panel-border: rgba(148, 163, 184, 0.24);
+            --text: #e2e8f0;
+            --muted: rgba(226, 232, 240, 0.74);
+            --accent: #fbbf24;
+            --accent-strong: #f59e0b;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            min-height: 100%;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 42%),
+                linear-gradient(180deg, #020617 0%, #0f172a 100%);
+            color: var(--text);
+        }
+
+        body {
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .shell {
+            position: relative;
+            z-index: 20;
+            width: min(980px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 20px 0 28px;
+        }
+
+        .panel {
+            padding: 18px;
+            border: 1px solid var(--panel-border);
+            border-radius: 18px;
+            background: var(--panel);
+            box-shadow: 0 24px 50px rgba(2, 6, 23, 0.42);
+            backdrop-filter: blur(14px);
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: rgba(253, 230, 138, 0.96);
+            font-size: 0.8rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+            line-height: 1.04;
+        }
+
+        .lead {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }
+
+        .runRow {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .runButton {
+            min-height: 42px;
+            padding: 0 16px;
+            border: 1px solid rgba(253, 230, 138, 0.35);
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(251, 191, 36, 0.95), rgba(245, 158, 11, 0.92));
+            color: #111827;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .runButton:hover {
+            filter: brightness(1.04);
+        }
+
+        .status {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .editorWrap {
+            margin-top: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .editorLabel {
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(191, 219, 254, 0.95);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 420px;
+            box-sizing: border-box;
+            padding: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 16px;
+            background: rgba(2, 6, 23, 0.9);
+            color: var(--text);
+            font: 13px/1.55 ui-monospace, SFMono-Regular, SF Mono, Consolas, "Liberation Mono", monospace;
+            resize: vertical;
+            outline: none;
+            white-space: pre;
+        }
+
+        textarea:focus {
+            border-color: rgba(251, 191, 36, 0.62);
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
+        }
+
+        .hint {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        code {
+            padding: 0.12em 0.35em;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #fde68a;
+        }
+
+        @media (max-width: 700px) {
+            .shell {
+                width: min(100% - 18px, 980px);
+                padding: 10px 0 18px;
+            }
+
+            .panel {
+                padding: 14px;
+                border-radius: 14px;
+            }
+
+            textarea {
+                min-height: 360px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="shell">
+        <section class="panel">
+            <p class="eyebrow">Fireworks Engine</p>
+            <h1>Snippet check</h1>
+            <p class="lead">
+                Paste the copied snippet from the gallery or the lab into the editor below.
+                The Run button executes it directly in this page, so the effect appears over the current UI.
+            </p>
+
+            <div class="runRow">
+                <button id="runSnippet" class="runButton" type="button">Run snippet</button>
+                <p id="scratchStatus" class="status" aria-live="polite">Paste a snippet, then click Run snippet.</p>
+            </div>
+
+            <div class="editorWrap">
+                <div class="editorLabel">Paste snippet here</div>
+                <textarea id="snippetSource" spellcheck="false">// Paste the copied snippet from the gallery or the lab here.
+// You can paste the snippet as-is.
+// This page executes the snippet directly in the current page context.
+
+import { createFireworksEngine } from '@fireworks-engine/core';
+
+const fireworks = createFireworksEngine({
+    canvas: {
+        appendTarget: document.body,
+    },
+});
+
+fireworks.startPreset('base');
+</textarea>
+                <p class="hint">
+                    Tip: if your snippet imports from <code>@fireworks-engine/core</code>,
+                    this page maps it to <code>../src/index.js</code> automatically.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./scratch.js"></script>
+</body>
+
+</html>

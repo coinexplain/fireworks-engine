@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fireworks minimal usage example</title>
+    <style>
+        :root {
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        body {
+            display: block;
+        }
+
+        .panel {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            width: min(560px, calc(100% - 24px));
+            display: grid;
+            gap: 12px;
+            justify-items: center;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.58);
+            color: #e2e8f0;
+            text-align: center;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.32);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            line-height: 1.1;
+        }
+
+        .panel p {
+            margin: 0;
+            max-width: 32rem;
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        button {
+            min-height: 42px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fbbf24 0%, #fb7185 100%);
+            color: #111827;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        button:hover {
+            filter: brightness(1.03);
+        }
+
+        button:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="panel">
+        <h1>Minimal usage example</h1>
+        <p>
+            This page shows the smallest browser integration path: create the engine, attach its canvas,
+            and launch one effect with a single button click.
+        </p>
+        <button id="startFireworks" type="button">Launch fireworks</button>
+    </main>
+
+    <script type="module">
+        import { createFireworksEngine } from '../src/index.js';
+
+        // Paste your own effect options here if you want to try a different recipe.
+        // The page stays minimal on purpose: one engine, one button, one launch.
+
+        const effectOptions = {
+            "rocket": {
+                "cascade": {
+                    "mode": "rocket",
+                    "bursts": 16,
+                    "childBursts": 1,
+                    "childSpeedMin": 400,
+                    "spreadX": 232,
+                    "spreadY": 239
+                }
+            },
+            "burstForms": {
+                "enabled": false
+            },
+            "burstSparks": {
+                "count": 54,
+                "tailScale": 1,
+                "thickness": 1,
+                "speedMin": 108,
+                "speedMax": 284,
+                "gravity": 180,
+                "lifeMin": 0.8,
+                "lifeMax": 1.4,
+                "directionDeg": 0
+            },
+            "burstTwinkleCloud": {
+                "enabled": false
+            }
+        };
+
+        const fireworks = createFireworksEngine({
+            canvas: {
+                appendTarget: document.body,
+            },
+        });
+
+        const startButton = document.getElementById('startFireworks');
+        startButton.addEventListener('click', () => {
+            const centerX = window.innerWidth * 0.5;
+            const centerY = window.innerHeight * 0.5;
+            fireworks.boom(centerX, centerY, effectOptions);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "@fireworks-engine/core",
+  "private": true,
+  "version": "1.0.0",
+  "license": "BSD-2-Clause",
+  "description": "Reusable canvas fireworks runtime package for standalone integrations and demos.",
+  "author": "coinexplain",
+  "homepage": "https://github.com/coinexplain/fireworks-engine#readme",
+  "bugs": {
+    "url": "https://github.com/coinexplain/fireworks-engine/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coinexplain/fireworks-engine.git"
+  },
+  "files": [
+    "src",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "fireworks-engine",
+    "fireworks",
+    "confetti",
+    "canvas",
+    "animation",
+    "effects",
+    "particles",
+    "standalone"
+  ],
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "smoke": "node --check src/index.js && node --input-type=module -e \"const mod = await import('./src/index.js'); if (typeof mod.createFireworksEngine !== 'function' || typeof mod.resolveFireworksEnginePreset !== 'function' || typeof mod.default !== 'function') throw new Error('package smoke failed'); console.log('package smoke ok');\"",
+    "typecheck": "tsc --noEmit --project tsconfig.types.json",
+    "test": "npm run smoke && npm run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

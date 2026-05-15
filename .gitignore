@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+.DS_Store
+.codex/
+docs/
+__tests__/
+jest.config.cjs

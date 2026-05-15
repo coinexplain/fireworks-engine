@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fireworks Engine Examples Gallery</title>
+    <link rel="stylesheet" href="./examples.css" />
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <p class="eyebrow">Fireworks Engine</p>
+            <h1>Examples Gallery</h1>
+            <div class="heroActions">
+
+                <a class="heroLink" href="./lab.html">Tuning lab</a>
+                <a class="heroLink" href="./fireworks-engine-options-reference.html">Options reference</a>
+            </div>
+            <p id="status" class="heroStatus" aria-live="polite">Choose an example block and run it over the page, or open the lab for full tuning.</p>
+            <p class="heroNote" role="note">
+                <span class="heroNoteBadge">Important</span>
+                <span>Card editor code uses gallery runtime helpers. Use <strong>Copy</strong> for the portable standalone snippet.</span>
+            </p>
+        </section>
+
+        <div id="gallery" class="gallery" aria-live="polite"></div>
+    </main>
+    <script type="module" src="./examples.js"></script>
+</body>
+</html>
