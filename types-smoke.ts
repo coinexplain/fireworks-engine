@@ -5,7 +5,7 @@ import FireworksEngineDefault, {
     type FireworksEngineOptions,
     type FireworksEnginePresetName,
     type FireworksLaunchPresetName,
-} from '@fireworks-engine/core';
+} from 'fireworks-engine';
 
 const container = document.createElement('div');
 

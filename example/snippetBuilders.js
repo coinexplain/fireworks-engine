@@ -59,7 +59,7 @@ export function buildEngineBootstrapSnippet({
     introLines = [],
 }) {
     const lines = [
-        "import { createFireworksEngine } from '@fireworks-engine/core';",
+        "import { createFireworksEngine } from 'fireworks-engine';",
         '',
     ];
 

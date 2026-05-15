@@ -1,4 +1,4 @@
-# Fireworks Engine Core
+# Fireworks Engine
 
 Reusable canvas fireworks runtime for browser applications.
 
@@ -17,13 +17,13 @@ Fireworks Engine creates and manages a canvas, runs an animation loop, and expos
 After the first npm release, installation will be:
 
 ```sh
-npm install @fireworks-engine/core
+npm install fireworks-engine
 ```
 
 ## Quick Start
 
 ```js
-import { createFireworksEngine } from '@fireworks-engine/core';
+import { createFireworksEngine } from 'fireworks-engine';
 
 const fireworks = createFireworksEngine({
     canvas: {
@@ -37,7 +37,7 @@ fireworks.startPreset('base');
 For a one-shot launch from a button:
 
 ```js
-import { createFireworksEngine } from '@fireworks-engine/core';
+import { createFireworksEngine } from 'fireworks-engine';
 
 const fireworks = createFireworksEngine({
     canvas: {
@@ -187,7 +187,7 @@ React example:
 
 ```jsx
 import { useEffect, useRef } from 'react';
-import { createFireworksEngine } from '@fireworks-engine/core';
+import { createFireworksEngine } from 'fireworks-engine';
 
 export function FireworksLayer() {
     const containerRef = useRef(null);
@@ -217,7 +217,7 @@ Vue example:
 ```vue
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { createFireworksEngine } from '@fireworks-engine/core';
+import { createFireworksEngine } from 'fireworks-engine';
 
 const containerRef = ref(null);
 let fireworks = null;
@@ -261,7 +261,7 @@ The package ships with `index.d.ts`.
 import {
     createFireworksEngine,
     type FireworksEngineOptions,
-} from '@fireworks-engine/core';
+} from 'fireworks-engine';
 
 const options: FireworksEngineOptions = {
     burstForms: {

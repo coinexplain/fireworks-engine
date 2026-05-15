@@ -32,7 +32,7 @@ function normalizeSnippetText(source) {
 
 function resolveRunnableSource(source) {
     const normalized = normalizeSnippetText(source);
-    const coreSpecifierPattern = /(['"])@fireworks-engine\/core\1/g;
+    const coreSpecifierPattern = /(['"])(?:fireworks-engine|@fireworks-engine\/core)\1/g;
     return normalized.replace(coreSpecifierPattern, `'${coreModuleUrl}'`);
 }
 
