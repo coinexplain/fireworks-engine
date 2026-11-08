@@ -189,6 +189,18 @@ export interface FireworksRocketLaunchOptions extends FireworksBurstOverrideOpti
     rocketTailEmbers?: FireworksRocketTailEmbersOptions;
 }
 
+export interface FireworksBurstEvent {
+    x: number;
+    y: number;
+}
+
+export type FireworksBurstCallback = (event: FireworksBurstEvent) => void;
+
+/** Options accepted only when creating an engine. */
+export interface FireworksEngineCreationOptions extends FireworksEngineOptions {
+    onBurst?: FireworksBurstCallback | null;
+}
+
 export interface FireworksEngineOptions extends FireworksRocketLaunchOptions {
     canvas?: FireworksCanvasOptions;
     runtime?: FireworksRuntimeOptions;
@@ -506,7 +518,7 @@ export interface FireworksBurstRequest {
 export interface FireworksPresetConfig extends FireworksEngineOptions { }
 
 export declare class FireworksEngine {
-    constructor(options?: FireworksEngineOptions);
+    constructor(options?: FireworksEngineCreationOptions);
 
     documentRef: Document | null | undefined;
     windowRef: Window | null | undefined;
@@ -677,7 +689,7 @@ export interface FireworksRocketExplicitTarget {
  * @param options Initial engine configuration.
  * @returns A new fireworks engine instance.
  */
-export declare function createFireworksEngine(options?: FireworksEngineOptions): FireworksEngine;
+export declare function createFireworksEngine(options?: FireworksEngineCreationOptions): FireworksEngine;
 
 /**
  * Resolves a preset name to a fully expanded engine configuration.

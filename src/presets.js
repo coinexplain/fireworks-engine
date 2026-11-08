@@ -346,6 +346,7 @@ function runAchievementUnlock(engine, targetX, targetY, options) {
 }
 
 function runSnowfall(engine, _targetX, _targetY, options) {
+    const generation = engine.runGeneration;
     const flakesPerWave = 6;
     const waveDelayMs = 1500;
 
@@ -355,6 +356,7 @@ function runSnowfall(engine, _targetX, _targetY, options) {
             const x = randomRange(0, stageWidth);
             const y = -10 - randomRange(0, 40);
             engine.burst(x, y, options);
+            if (engine.runGeneration !== generation) return;
         }
 
         scheduleTimeout(engine, () => {
@@ -372,6 +374,7 @@ function runSnowfall(engine, _targetX, _targetY, options) {
 }
 
 function runLeafFall(engine, _targetX, _targetY, options) {
+    const generation = engine.runGeneration;
     const leavesPerWave = 5;
     const waveDelayMs = 1200;
 
@@ -381,6 +384,7 @@ function runLeafFall(engine, _targetX, _targetY, options) {
             const x = randomRange(0, stageWidth);
             const y = -16 - randomRange(0, 60);
             engine.burst(x, y, options);
+            if (engine.runGeneration !== generation) return;
         }
 
         scheduleTimeout(engine, () => {
@@ -398,6 +402,7 @@ function runLeafFall(engine, _targetX, _targetY, options) {
 }
 
 function runAmbientSparkle(engine, targetX, targetY, options) {
+    const generation = engine.runGeneration;
     const pulseDelayMs = 8000;
 
     const launchPulse = () => {
@@ -405,6 +410,7 @@ function runAmbientSparkle(engine, targetX, targetY, options) {
         const centerY = Number.isFinite(targetY) ? targetY : engine.height * 0.5;
 
         engine.launchRocketAt(centerX, centerY, options);
+        if (engine.runGeneration !== generation) return;
         engine.launchRocketAt(
             centerX,
             centerY,
@@ -415,6 +421,7 @@ function runAmbientSparkle(engine, targetX, targetY, options) {
             }),
         );
 
+        if (engine.runGeneration !== generation) return;
         scheduleTimeout(engine, () => {
             if (!engine.running) {
                 return;
@@ -430,6 +437,7 @@ function runAmbientSparkle(engine, targetX, targetY, options) {
 }
 
 function runConfettiPop(engine, _targetX, _targetY, options) {
+    const generation = engine.runGeneration;
     const stageWidth = engine.width;
     const stageHeight = engine.height;
     const cannons = [
@@ -437,7 +445,7 @@ function runConfettiPop(engine, _targetX, _targetY, options) {
         { x: 1.01, y: 0.5, directionDeg: 135 },
     ];
 
-    cannons.forEach(({ x, y, directionDeg }) => {
+    for (const { x, y, directionDeg } of cannons) {
         engine.confetti(
             stageWidth * x,
             stageHeight * y,
@@ -447,7 +455,8 @@ function runConfettiPop(engine, _targetX, _targetY, options) {
                 },
             }),
         );
-    });
+        if (engine.runGeneration !== generation) return true;
+    }
 
     return true;
 }

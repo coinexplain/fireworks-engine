@@ -3,6 +3,9 @@ import FireworksEngineDefault, {
     createFireworksEngine,
     resolveFireworksEnginePreset,
     type FireworksEngineOptions,
+    type FireworksEngineCreationOptions,
+    type FireworksBurstCallback,
+    type FireworksBurstEvent,
     type FireworksEnginePresetName,
     type FireworksLaunchPresetName,
 } from 'fireworks-engine';
@@ -87,6 +90,21 @@ const options: FireworksEngineOptions = {
 const engine = createFireworksEngine(options);
 const explicitEngine = new FireworksEngine(options);
 const defaultEngine = new FireworksEngineDefault(options);
+
+const onBurst: FireworksBurstCallback = (event: FireworksBurstEvent) => {
+    const position: [number, number] = [event.x, event.y];
+    void position;
+};
+const creationOptions: FireworksEngineCreationOptions = { ...options, onBurst };
+new FireworksEngine(creationOptions);
+new FireworksEngineDefault({ onBurst });
+createFireworksEngine({ onBurst });
+// @ts-expect-error onBurst is constructor-only
+engine.start({ onBurst });
+// @ts-expect-error onBurst is constructor-only
+engine.updateOptions({ onBurst });
+// @ts-expect-error onBurst is constructor-only
+engine.burst(10, 20, { onBurst });
 
 const enginePresetName: FireworksEnginePresetName = 'finale';
 const launchPresetName: FireworksLaunchPresetName = 'confetti-pop';

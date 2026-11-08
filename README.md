@@ -52,6 +52,37 @@ Always call `destroy()` when the owning UI unmounts.
 fireworks.destroy();
 ```
 
+## Burst notifications
+
+Pass `onBurst` when creating the engine to synchronize another effect with each
+logical explosion:
+
+```js
+const fireworks = createFireworksEngine({
+    onBurst: ({ x, y }) => {
+        // Trigger an already prepared effect at these canvas coordinates.
+    },
+});
+```
+
+The callback runs synchronously after the first visual component is created,
+once per logical burst, including rocket detonations and cascade children.
+Queued bursts notify on materialization, not enqueue, and particle batches,
+trails, and later twinkles do not produce additional notifications. Flash-only
+and twinkle-only bursts also notify; a twinkle cloud notifies when created even
+if its twinkles appear later. Completely empty bursts do not notify. This is a
+component-creation signal, not a pixel visibility or audio hardware timestamp.
+
+`onBurst` is constructor-only: `start`, launch methods, and `updateOptions` neither
+replace nor reset it. Exceptions in the callback are isolated from rendering.
+Calling `stop()` or `destroy()` from the callback cancels the rest of that run;
+starting a replacement effect leaves the new run intact. Ordinary additive
+launches remain part of the current run. Call `destroy()` when the owner unmounts.
+
+TypeScript exports `FireworksBurstEvent`, `FireworksBurstCallback`, and
+`FireworksEngineCreationOptions`; existing `FireworksEngineOptions` still work
+for both construction and start/update configuration.
+
 ## Public API
 
 Primary exports:

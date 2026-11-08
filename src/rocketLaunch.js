@@ -317,6 +317,7 @@ function launchRocketWithExplicitTarget(engine, options, explicitTarget) {
         return false;
     }
 
+    const generation = engine.runGeneration;
     const wasRunning = engine.running;
     if (!startLoop(engine)) {
         return false;
@@ -324,7 +325,7 @@ function launchRocketWithExplicitTarget(engine, options, explicitTarget) {
 
     createRocket(engine, options, explicitTarget);
 
-    if (!wasRunning) {
+    if (engine.runGeneration === generation && !wasRunning) {
         engine.finishWhenDone();
     }
 
@@ -622,10 +623,12 @@ function createRocket(engine, options = {}, explicitTarget = null) {
 }
 
 export function launchRocket(engine, options = {}) {
+    const generation = engine.runGeneration;
     const count = options.count ?? 1;
 
     for (let index = 0; index < count; index += 1) {
         createRocket(engine, options);
+        if (engine.runGeneration !== generation) return;
     }
 }
 
@@ -659,6 +662,7 @@ export function launchRocketFromTo(engine, startX, startY, targetX, targetY, opt
 }
 
 export function scheduleCascadeBursts(engine, rocket) {
+    const generation = engine.runGeneration;
     const cascade = rocket.cascade ?? {};
     const cascadeMode = resolveRocketCascadeMode(cascade.mode);
     const cascadeBurstCount = cascade.bursts ?? 0;
@@ -693,6 +697,7 @@ export function scheduleCascadeBursts(engine, rocket) {
                 distance,
             );
             launchRocketFromTo(engine, originX, originY, x, y, childLaunchOptions);
+            if (engine.runGeneration !== generation) return;
         }
         return;
     }
