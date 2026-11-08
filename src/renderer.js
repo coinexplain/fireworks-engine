@@ -800,6 +800,7 @@ function drawFormParticle(engine, particle) {
 }
 
 export function loop(engine, now) {
+    const generation = engine.runGeneration;
     if (!engine.running || !engine.ctx) {
         return;
     }
@@ -817,6 +818,7 @@ export function loop(engine, now) {
 
     ctx.clearRect(0, 0, engine.width, engine.height);
     updateRockets(engine, dt);
+    if (engine.runGeneration !== generation) return;
     updateParticles(engine, dt);
     updateFlashes(engine, dt);
     updateTwinkleClouds(engine, dt);
@@ -854,6 +856,7 @@ export function loop(engine, now) {
     }
 
     drainBurstQueue(engine);
+    if (engine.runGeneration !== generation) return;
     clearRenderCachesWhenIdle(engine);
 
     const requestAnimationFrameFn = getRequestAnimationFrame(engine);

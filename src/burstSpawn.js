@@ -1,3 +1,4 @@
+import { createBurstEvent, isCurrentRun, notifyBurst } from './burstEvents.js';
 import {
     BURST_FLASH_ATTACK_UNIT,
     DEFAULT_BURST_SINGLE_COLOR,
@@ -252,6 +253,17 @@ function createBurstRequests(x, y, options, flashOptions = options) {
     return requests;
 }
 
+function spawnBurstExtras(engine, burst, flashOptions, cloudOptions) {
+    if (spawnBurstCenterFlash(engine, burst.x, burst.y, flashOptions)) {
+        notifyBurst(engine, burst);
+    }
+    if (!isCurrentRun(engine, burst.generation)) return false;
+    if (spawnBurstTwinkleCloud(engine, burst.x, burst.y, cloudOptions)) {
+        notifyBurst(engine, burst);
+    }
+    return isCurrentRun(engine, burst.generation);
+}
+
 function enqueueBurst(engine, x, y, options = {}) {
     if (!engine.running) {
         return false;
@@ -262,10 +274,11 @@ function enqueueBurst(engine, x, y, options = {}) {
         resolveBurstCurrentConfig(engine),
     );
     const requests = createBurstRequests(x, y, burstOptions, options);
+    const burst = createBurstEvent(engine, x, y);
+    requests.forEach((request) => { request.burstEvent = burst; });
 
     if (requests.length === 0) {
-        spawnBurstCenterFlash(engine, x, y, options);
-        spawnBurstTwinkleCloud(engine, x, y, burstOptions);
+        spawnBurstExtras(engine, burst, options, burstOptions);
         return true;
     }
 
@@ -554,6 +567,7 @@ function spawnBurstParticles(engine, request, startIndex, count) {
 }
 
 export function drainBurstQueue(engine) {
+    const generation = engine.runGeneration;
     let remainingBudget = engine.maxBurstParticlesPerFrame;
 
     while (remainingBudget > 0 && engine.burstQueue.length > 0) {
@@ -567,14 +581,22 @@ export function drainBurstQueue(engine) {
 
         const spawnCount = Math.min(remainingBudget, remainingParticles);
         if (request.spawnBurstCenterFlash && !request.flashSpawned) {
-            spawnBurstCenterFlash(engine, request.x, request.y, request.flashOptions ?? request.options);
             request.flashSpawned = true;
+            if (spawnBurstCenterFlash(engine, request.x, request.y, request.flashOptions ?? request.options)) {
+                notifyBurst(engine, request.burstEvent);
+            }
+            if (!isCurrentRun(engine, generation)) return;
         }
         if (request.spawnBurstTwinkleCloud && !request.twinkleCloudSpawned) {
-            spawnBurstTwinkleCloud(engine, request.x, request.y, request.options);
             request.twinkleCloudSpawned = true;
+            if (spawnBurstTwinkleCloud(engine, request.x, request.y, request.options)) {
+                notifyBurst(engine, request.burstEvent);
+            }
+            if (!isCurrentRun(engine, generation)) return;
         }
         spawnBurstParticles(engine, request, request.nextIndex, spawnCount);
+        notifyBurst(engine, request.burstEvent);
+        if (!isCurrentRun(engine, generation)) return;
         request.nextIndex += spawnCount;
         remainingBudget -= spawnCount;
 
@@ -600,12 +622,14 @@ export function launchBurst(engine, x, y, options = {}) {
         normalizedOptions,
         resolveBurstCurrentConfig(engine),
     );
-    spawnBurstCenterFlash(engine, x, y, normalizedOptions);
-    spawnBurstTwinkleCloud(engine, x, y, normalizedOptions);
+    const burst = createBurstEvent(engine, x, y);
+    if (!spawnBurstExtras(engine, burst, normalizedOptions, normalizedOptions)) return true;
     const requests = createBurstRequests(x, y, burstOptions);
-    requests.forEach((request) => {
+    for (const request of requests) {
         spawnBurstParticles(engine, request, 0, request.totalCount);
-    });
+        notifyBurst(engine, burst);
+        if (!isCurrentRun(engine, burst.generation)) return true;
+    }
     return true;
 }
 
@@ -669,6 +693,7 @@ function spawnBurstCenterFlash(engine, x, y, options = {}) {
         color,
         innerStop,
     });
+    return true;
 }
 
 function spawnBurstTwinkleCloud(engine, x, y, options = {}) {
@@ -761,4 +786,5 @@ function spawnBurstTwinkleCloud(engine, x, y, options = {}) {
         spawnSpread,
         twinkles,
     });
+    return true;
 }

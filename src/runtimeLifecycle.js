@@ -160,10 +160,12 @@ export function removeResizeObserver(engine) {
 }
 
 export function scheduleTimeout(engine, callback, delay = 0) {
+    const generation = engine.runGeneration;
     const schedule = typeof engine.setTimeoutRef === 'function' ? engine.setTimeoutRef : setTimeout;
 
     let timeoutId = null;
     const runWhenVisible = () => {
+        if (engine.runGeneration !== generation) return;
         if (timeoutId !== null) {
             engine.timeoutIds.delete(timeoutId);
         }

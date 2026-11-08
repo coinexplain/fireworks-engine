@@ -285,6 +285,8 @@ function mergePresetLaunchOptions(presetOptions = {}, launchOverrides = {}) {
 
 export class FireworksEngine {
     constructor(options = {}) {
+        this.runGeneration = 0;
+        this.onBurstCallback = typeof options?.onBurst === 'function' ? options.onBurst : null;
         const normalizedOptions = normalizeGroupedPublicOptions(options);
         this.explicitLaunchOptions = extractExplicitLaunchOptions(options);
         const engineConfig = buildEngineConfig(normalizedOptions);
@@ -420,6 +422,7 @@ export class FireworksEngine {
     }
 
     launchPresetAt(name, targetX, targetY, options = {}) {
+        const generation = this.runGeneration;
         if (shouldSkipHiddenLaunch(this)) {
             return false;
         }
@@ -452,7 +455,7 @@ export class FireworksEngine {
                     ? launchPreset.run(this, targetX, targetY, launchOptions)
                     : false;
                 launched = launched || nextLaunched;
-                if (!nextLaunched) {
+                if (this.runGeneration !== generation || !nextLaunched) {
                     break;
                 }
             }
@@ -485,7 +488,7 @@ export class FireworksEngine {
         for (let index = 0; index < count; index += 1) {
             const nextLaunched = launchRocketAt(this, targetX, targetY, launchOptions);
             launched = launched || nextLaunched;
-            if (!nextLaunched) {
+            if (this.runGeneration !== generation || !nextLaunched) {
                 break;
             }
         }
@@ -623,8 +626,9 @@ export class FireworksEngine {
     // Note: Renderer logic is decoupled; use engine directly in renderer for performance.
 
     finishWhenDone() {
+        const generation = this.runGeneration;
         const check = () => {
-            if (!this.running) {
+            if (this.runGeneration !== generation || !this.running) {
                 return;
             }
 
@@ -639,7 +643,7 @@ export class FireworksEngine {
                     this.finishLifecycleNotified = true;
                     invokeLifecycleHook(this.activeLifecycleHooks.onFinish, this);
                 }
-                this.stop(false);
+                if (this.runGeneration === generation) this.stop(false);
                 return;
             }
 
@@ -728,6 +732,7 @@ export class FireworksEngine {
     }
 
     stop(clearCanvas = true) {
+        this.runGeneration += 1;
         const wasRunning = this.running;
         this.running = false;
         lifecycle.clearPendingStart(this);

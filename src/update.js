@@ -90,6 +90,7 @@ function randomBetween(min, max) {
 }
 
 export function updateRockets(engine, dt) {
+    const generation = engine.runGeneration;
     const rockets = engine.rockets;
     let writeIndex = 0;
 
@@ -124,7 +125,9 @@ export function updateRockets(engine, dt) {
             rocket.x = burstX;
             rocket.y = burstY;
             launchBurst(engine, burstX, burstY, rocket.burst);
+            if (engine.runGeneration !== generation) return;
             scheduleCascadeBursts(engine, rocket);
+            if (engine.runGeneration !== generation) return;
             continue;
         }
 
