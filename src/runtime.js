@@ -5,6 +5,10 @@ import {
 } from './valueNormalizers.js';
 import { buildEngineConfig } from './configBuilder.js';
 import {
+    BURST_SEQUENCE, createBurstSequence, discardBurstSequence, invalidateBurstSequences,
+    supportsSequenceConfig, supportsSequenceLaunch,
+} from './burstSequence.js';
+import {
     resolveFireworksEnginePreset,
     resolveFireworksLaunchPreset,
 } from './presets.js';
@@ -422,6 +426,9 @@ export class FireworksEngine {
     }
 
     launchPresetAt(name, targetX, targetY, options = {}) {
+        if (options?.trackBurstSequence === true && !supportsSequenceLaunch(this, name, options)) {
+            return false;
+        }
         const generation = this.runGeneration;
         if (shouldSkipHiddenLaunch(this)) {
             return false;
@@ -446,6 +453,10 @@ export class FireworksEngine {
 
             const launchOptions = { ...mergedOptions };
             delete launchOptions.count;
+            delete launchOptions.trackBurstSequence;
+            if (options.trackBurstSequence === true) {
+                launchOptions[BURST_SEQUENCE] = createBurstSequence(this);
+            }
 
             applyTimeScaleFromLaunchOptions(this, launchOptions);
 
@@ -460,6 +471,7 @@ export class FireworksEngine {
                 }
             }
 
+            if (!launched) discardBurstSequence(this, launchOptions[BURST_SEQUENCE]);
             return launched;
         }
 
@@ -611,6 +623,7 @@ export class FireworksEngine {
             this.maxBurstParticlesPerFrame = this.performance.maxBurstParticlesPerFrame;
             this.particlePressureThreshold = this.performance.particlePressureThreshold;
             this.fastRectRadiusThreshold = this.performance.fastRectRadiusThreshold;
+            if (!supportsSequenceConfig(this)) invalidateBurstSequences(this);
         }
 
         if (
@@ -732,6 +745,7 @@ export class FireworksEngine {
     }
 
     stop(clearCanvas = true) {
+        invalidateBurstSequences(this);
         this.runGeneration += 1;
         const wasRunning = this.running;
         this.running = false;

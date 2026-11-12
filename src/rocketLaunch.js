@@ -20,6 +20,7 @@ import {
     normalizeHexColor,
 } from './colorUtils.js';
 import { buildBurstOptions } from './burstConfigBuilder.js';
+import { BURST_SEQUENCE, BURST_WORK, reserveBurstWork } from './burstSequence.js';
 import {
     launchBurst,
     resolveBurstBaseColor,
@@ -333,6 +334,23 @@ function launchRocketWithExplicitTarget(engine, options, explicitTarget) {
 }
 
 
+function resolveCascadeCount(count, sizeScale) {
+    return clamp(Math.floor((count ?? 0) * sizeScale), 0, ROCKET_CASCADE_LIMITS.burstCountMax);
+}
+
+// Only the validated victory recipe reaches this boundary: rocket children,
+// followed by their finite direct-burst cascades. Reserve before any callback.
+function reserveVictoryWork(sequence, rocket) {
+    const childOptions = resolveDefaultCascadeChildLaunchOptions(rocket, rocket.cascade);
+    const normalizedChild = normalizeGroupedPublicOptions(childOptions);
+    const leafCount = resolveCascadeCount(normalizedChild.rocket.cascade.bursts, normalizedChild.sizeScale);
+    const children = Array.from({ length: rocket.cascade.bursts }, () => {
+        const leaves = Array.from({ length: leafCount }, () => reserveBurstWork(sequence));
+        return reserveBurstWork(sequence, leaves);
+    });
+    return reserveBurstWork(sequence, children);
+}
+
 function createRocket(engine, options = {}, explicitTarget = null) {
     const normalizedOptions = normalizeGroupedPublicOptions(options);
     const {
@@ -520,16 +538,8 @@ function createRocket(engine, options = {}, explicitTarget = null) {
             burstCurrentConfig,
         )
         : null;
-    const cascadeBurstCount = clamp(
-        Math.floor((rocketCascadeInput.bursts ?? 0) * sizeScale),
-        0,
-        ROCKET_CASCADE_LIMITS.burstCountMax,
-    );
-    const cascadeChildBurstCount = clamp(
-        Math.floor((rocketCascadeInput.childBursts ?? rocketCascadeInput.bursts ?? 0) * sizeScale),
-        0,
-        ROCKET_CASCADE_LIMITS.burstCountMax,
-    );
+    const cascadeBurstCount = resolveCascadeCount(rocketCascadeInput.bursts, sizeScale);
+    const cascadeChildBurstCount = resolveCascadeCount(rocketCascadeInput.childBursts ?? rocketCascadeInput.bursts, sizeScale);
     const burstCascadeDelayMs = resolveScaledOverride(
         rocketCascadeInput.delay,
         ROCKET_CASCADE_LIMITS.defaultDelayMs,
@@ -618,6 +628,12 @@ function createRocket(engine, options = {}, explicitTarget = null) {
         simple: !!normalizedOptions.simple,
     };
 
+    const work = options[BURST_WORK]
+        ?? (options[BURST_SEQUENCE] ? reserveVictoryWork(options[BURST_SEQUENCE], rocket) : null);
+    if (work) {
+        rocket.sequenceWork = work;
+        rocket.burst = { ...rocket.burst, [BURST_WORK]: work };
+    }
     engine.rockets.push(rocket);
     return rocket;
 }
@@ -696,7 +712,10 @@ export function scheduleCascadeBursts(engine, rocket) {
                 cascade,
                 distance,
             );
-            launchRocketFromTo(engine, originX, originY, x, y, childLaunchOptions);
+            launchRocketFromTo(engine, originX, originY, x, y, {
+                ...childLaunchOptions,
+                ...(rocket.sequenceWork ? { [BURST_WORK]: rocket.sequenceWork.children[index] } : {}),
+            });
             if (engine.runGeneration !== generation) return;
         }
         return;
@@ -716,7 +735,9 @@ export function scheduleCascadeBursts(engine, rocket) {
                 spreadY,
             );
 
-            launchBurst(engine, x, y, burstOptions);
+            launchBurst(engine, x, y, rocket.sequenceWork
+                ? { ...burstOptions, [BURST_WORK]: rocket.sequenceWork.children[index] }
+                : burstOptions);
         }, resolveScaledDelay(engine, delay * (index + 1)));
     }
 }

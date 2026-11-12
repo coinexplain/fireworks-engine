@@ -1,6 +1,6 @@
 {
   "name": "fireworks-engine",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "BSD-2-Clause",
   "description": "Reusable canvas fireworks runtime package for standalone integrations and demos.",
   "author": "coinexplain",
@@ -41,7 +41,7 @@
   "scripts": {
     "smoke": "node --check src/index.js && node --input-type=module -e \"const mod = await import('./src/index.js'); if (typeof mod.createFireworksEngine !== 'function' || typeof mod.resolveFireworksEnginePreset !== 'function' || typeof mod.default !== 'function') throw new Error('package smoke failed'); console.log('package smoke ok');\"",
     "typecheck": "tsc --noEmit --project tsconfig.types.json",
-    "test": "npm run smoke && npm run typecheck && node --test test/burst-events.test.js"
+    "test": "npm run smoke && npm run typecheck && node --test test/burst-events.test.js test/burst-sequence.test.js"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

@@ -12,6 +12,20 @@ import FireworksEngineDefault, {
 
 const container = document.createElement('div');
 
+const trackedVictory = createFireworksEngine({
+    onBurst(event) {
+        if (event.sequence) {
+            const identity: symbol = event.sequence.id;
+            const index: number = event.sequence.index;
+            const boundary: boolean = event.sequence.isFirst || event.sequence.isLast;
+            void [identity, index, boundary];
+        }
+    },
+});
+trackedVictory.launchPresetAt('victory-finale', 100, 100, {
+    trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95,
+});
+
 const options: FireworksEngineOptions = {
     canvas: {
         appendTarget: container,

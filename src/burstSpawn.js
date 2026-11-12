@@ -1,4 +1,5 @@
 import { createBurstEvent, isCurrentRun, notifyBurst } from './burstEvents.js';
+import { BURST_WORK } from './burstSequence.js';
 import {
     BURST_FLASH_ATTACK_UNIT,
     DEFAULT_BURST_SINGLE_COLOR,
@@ -264,7 +265,7 @@ function spawnBurstExtras(engine, burst, flashOptions, cloudOptions) {
     return isCurrentRun(engine, burst.generation);
 }
 
-function enqueueBurst(engine, x, y, options = {}) {
+function enqueueBurst(engine, x, y, options = {}, work) {
     if (!engine.running) {
         return false;
     }
@@ -274,7 +275,7 @@ function enqueueBurst(engine, x, y, options = {}) {
         resolveBurstCurrentConfig(engine),
     );
     const requests = createBurstRequests(x, y, burstOptions, options);
-    const burst = createBurstEvent(engine, x, y);
+    const burst = createBurstEvent(engine, x, y, work);
     requests.forEach((request) => { request.burstEvent = burst; });
 
     if (requests.length === 0) {
@@ -611,7 +612,7 @@ export function drainBurstQueue(engine) {
 export function launchBurst(engine, x, y, options = {}) {
     const normalizedOptions = normalizeGroupedPublicOptions(options);
     if (engine.enableBurstQueueThrottling) {
-        return enqueueBurst(engine, x, y, normalizedOptions);
+        return enqueueBurst(engine, x, y, normalizedOptions, options[BURST_WORK]);
     }
 
     if (!engine.running) {
@@ -622,7 +623,7 @@ export function launchBurst(engine, x, y, options = {}) {
         normalizedOptions,
         resolveBurstCurrentConfig(engine),
     );
-    const burst = createBurstEvent(engine, x, y);
+    const burst = createBurstEvent(engine, x, y, options[BURST_WORK]);
     if (!spawnBurstExtras(engine, burst, normalizedOptions, normalizedOptions)) return true;
     const requests = createBurstRequests(x, y, burstOptions);
     for (const request of requests) {
