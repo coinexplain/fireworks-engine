@@ -192,6 +192,23 @@ export interface FireworksRocketLaunchOptions extends FireworksBurstOverrideOpti
 export interface FireworksBurstEvent {
     x: number;
     y: number;
+    /** Present only for an opted-in, supported victory-finale launch. */
+    sequence?: {
+        /** Opaque identity, unique per launch within this engine. */
+        id: symbol;
+        index: number;
+        isFirst: boolean;
+        isLast: boolean;
+    };
+}
+
+export interface FireworksPresetLaunchOptions extends FireworksRocketLaunchOptions {
+    /** Only victory-finale with count=1, sizeScale=1.05, timeScale=0.95 and
+     * default effective visual/performance engine configuration is supported.
+     * Unsupported tracking requests return false before launch side effects.
+     * Changing that configuration during a launch interrupts its tracking.
+     */
+    trackBurstSequence?: boolean;
 }
 
 export type FireworksBurstCallback = (event: FireworksBurstEvent) => void;
@@ -636,7 +653,7 @@ export declare class FireworksEngine {
         name: FireworksEnginePresetName | FireworksLaunchPresetName | string,
         targetX: number,
         targetY: number,
-        options?: FireworksRocketLaunchOptions,
+        options?: FireworksPresetLaunchOptions,
     ): boolean;
     /**
      * Launches a rocket from a specific start point toward a target point.

@@ -85,6 +85,53 @@ for both construction and start/update configuration.
 
 ## Public API
 
+### Tracked victory boundaries
+
+For the supported game victory configuration, opt in per launch:
+
+```js
+const fireworks = createFireworksEngine({
+    onBurst: ({ x, y, sequence }) => {
+        // sequence is available on tracked victory bursts only.
+        // It describes this explosion now, never a delayed completion signal.
+        if (sequence?.isFirst || sequence?.isLast) {
+            // Trigger a prepared sound here.
+        }
+    },
+});
+fireworks.launchPresetAt('victory-finale', 210, 90, {
+    trackBurstSequence: true,
+    sizeScale: 1.05,
+    timeScale: 0.95,
+});
+```
+
+`sequence` contains an opaque symbol `id`, zero-based materialization `index`,
+and boolean `isFirst`/`isLast`. Each additive launch has its own identity and
+boundaries. Future rocket and delayed cascade bursts are reserved before the
+first explosion; particles fading after their first appearance do not count
+as future bursts. A final burst is flagged during its own normal `onBurst`
+callback, not when the animation later becomes idle. A one-burst sequence has
+both flags; no extra callbacks are generated for cancellation or empty work.
+
+This deliberately narrow opt-in accepts only `victory-finale`, `count` omitted
+or exactly `1`, `sizeScale: 1.05`, `timeScale: 0.95`, and no other launch keys.
+Effective engine visual and performance settings must match defaults (including
+`sizeScale: 1`, burst components, rocket/tail settings and performance budgets;
+default queue throttling is **off**). Constructor canvas/runtime references and
+callbacks may be customized. Engine timeScale may differ because the launch
+explicitly sets it. Other tracking configurations, including `count: 0/2` and
+queued engines, return `false` before creating a canvas, scheduling work,
+changing timeScale, drawing random numbers or notifying callbacks. Calls without
+`trackBurstSequence: true` keep their existing behavior and `{ x, y }` payload.
+
+Changing effective visual/performance configuration via `updateOptions` during
+a sequence interrupts its tracking permanently, even if defaults are restored.
+The visual effect continues normally, with subsequent callbacks lacking
+`sequence`. `stop`, `destroy` and replacement starts invalidate all old tracking;
+no synthetic final sound should be added. Do not mutate engine internals directly.
+This is a component-creation synchronization signal, not an audio-output timestamp.
+
 Primary exports:
 
 - `FireworksEngine`

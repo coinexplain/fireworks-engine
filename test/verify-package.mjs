@@ -9,7 +9,7 @@ import { fixture, smallBurst, seeded } from './fixture.js';
 const packageDir = path.resolve(process.argv[2]);
 const sourceDir = fileURLToPath(new URL('../', import.meta.url));
 const metadata = JSON.parse(await readFile(path.join(packageDir, 'package.json'), 'utf8'));
-assert.equal(metadata.version, '1.0.1');
+assert.equal(metadata.version, '1.0.2');
 assert.equal(metadata.exports['.'].default, metadata.main);
 assert.equal(metadata.exports['.'].types, './index.d.ts');
 const { createFireworksEngine } = await import(pathToFileURL(path.join(packageDir, metadata.main)));
@@ -28,6 +28,25 @@ assert.equal(f.engine.burstQueue.length, 0);
 f.engine.destroy();
 assert.equal(f.frames.size, 0);
 assert.equal(f.timers.size, 0);
+
+const victoryEvents = [];
+const victory = fixture(createFireworksEngine, { onBurst: (event) => victoryEvents.push(event) });
+assert.equal(victory.engine.launchPresetAt('victory-finale', 210, 90, {
+    trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95,
+}), true);
+for (let i = 0; i < 600; i++) victory.step();
+assert.ok(victoryEvents.length > 7);
+assert.ok(victoryEvents[0].sequence.isFirst);
+assert.ok(victoryEvents.at(-1).sequence.isLast);
+victoryEvents.forEach((event, index) => {
+    assert.equal(event.sequence.index, index);
+    assert.equal(event.sequence.id, victoryEvents[0].sequence.id);
+    assert.equal(event.sequence.isFirst, index === 0);
+    assert.equal(event.sequence.isLast, index === victoryEvents.length - 1);
+});
+victory.engine.destroy();
+assert.equal(victory.frames.size, 0);
+assert.equal(victory.timers.size, 0);
 
 const files = [];
 async function verifyFiles(relative = '') {
@@ -68,5 +87,5 @@ if (process.argv[3]) {
         });
     }
     for (const queued of [false, true]) assert.equal(snapshot(createFireworksEngine, queued), snapshot(baseline.createFireworksEngine, queued));
-    console.log('No-callback victory-finale matches 1.0.0 baseline: 300 frames each, immediate and queued, component state and canvas calls.');
+    console.log('No-callback victory-finale matches the supplied baseline: 300 frames each, immediate and queued, component state and canvas calls.');
 }
