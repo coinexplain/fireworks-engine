@@ -284,6 +284,99 @@ function getGlyphSprite(engine, key, glyph, color, roundedSize) {
     return canvas;
 }
 
+function resolveImageSourceSize(source) {
+    const width = Number(source.naturalWidth || source.videoWidth || source.width);
+    const height = Number(source.naturalHeight || source.videoHeight || source.height);
+    return { width, height };
+}
+
+/**
+ * The frame can be drawn: the source is loaded and the frame lies inside it.
+ * An HTMLImageElement still loading reports `complete === false`.
+ */
+export function isImageFrameDrawable(frame) {
+    const source = frame?.source;
+    if (!source || typeof source !== 'object') {
+        return false;
+    }
+
+    if (source.complete === false) {
+        return false;
+    }
+
+    const { width, height } = resolveImageSourceSize(source);
+    if (!(width > 0) || !(height > 0)) {
+        return false;
+    }
+
+    return (
+        frame.x + frame.width <= width
+        && frame.y + frame.height <= height
+    );
+}
+
+function resolveImageFrameId(engine, frame) {
+    if (!(engine.imageFrameIds instanceof WeakMap)) {
+        engine.imageFrameIds = new WeakMap();
+        engine.nextImageFrameId = 0;
+    }
+
+    let id = engine.imageFrameIds.get(frame);
+    if (id === undefined) {
+        engine.nextImageFrameId += 1;
+        id = engine.nextImageFrameId;
+        engine.imageFrameIds.set(frame, id);
+    }
+    return id;
+}
+
+function resolveImageFrameDrawSize(frame, roundedSize) {
+    const scale = roundedSize / Math.max(frame.width, frame.height);
+    return {
+        width: Math.max(1, Math.round(frame.width * scale)),
+        height: Math.max(1, Math.round(frame.height * scale)),
+    };
+}
+
+/** Frame pre-scaled to the particle size, cached per frame and size like glyph sprites. */
+function getImageFrameSprite(engine, frame, roundedSize) {
+    const key = `image|${resolveImageFrameId(engine, frame)}|${roundedSize}`;
+    const cachedSprite = engine.spriteCache.get(key);
+    if (cachedSprite) {
+        return cachedSprite;
+    }
+
+    const documentRef = getDocument(engine);
+    const canvas = documentRef?.createElement?.('canvas');
+    if (!canvas) {
+        return null;
+    }
+
+    const drawSize = resolveImageFrameDrawSize(frame, roundedSize);
+    canvas.width = drawSize.width;
+    canvas.height = drawSize.height;
+
+    const ctx = canvas.getContext?.('2d', { alpha: true });
+    if (!ctx || typeof ctx.drawImage !== 'function') {
+        return null;
+    }
+
+    ctx.drawImage(
+        frame.source,
+        frame.x,
+        frame.y,
+        frame.width,
+        frame.height,
+        0,
+        0,
+        drawSize.width,
+        drawSize.height,
+    );
+
+    engine.spriteCache.set(key, canvas);
+    return canvas;
+}
+
 function prepareParticleRenderState(engine) {
     const hasQueuedBurstPressure = engine.burstQueue.length > 0;
     const hasParticlePressure = engine.particles.length >= engine.particlePressureThreshold;
@@ -680,9 +773,48 @@ function drawFormGlyphParticle(engine, particle, drawX = particle.x, drawY = par
     ctx.drawImage(sprite, drawX - (sprite.width / 2), drawY - (sprite.height / 2));
 }
 
+/**
+ * Draws the particle image frame in its own colors (palette and highlight do not apply).
+ * Not loaded, missing or out-of-bounds frame: a palette-colored circle, no exception.
+ */
+function drawFormImageParticle(engine, particle, drawX = particle.x, drawY = particle.y) {
+    const ctx = engine.ctx;
+    const frame = particle.formImage;
+    if (!isImageFrameDrawable(frame)) {
+        setContextFillStyle(ctx, particle.color);
+        fillParticleShape(engine, particle, 1, drawX, drawY);
+        return;
+    }
+
+    const radius = particle.radius ?? 2;
+    const imageSize = particle.glyphSpriteSize
+        ?? Math.max(GLYPH_SPRITE_SIZE_MIN, radius * GLYPH_SPRITE_RADIUS_SCALE);
+    const roundedSize = Math.max(1, Math.round(imageSize));
+    const sprite = getImageFrameSprite(engine, frame, roundedSize);
+
+    if (!sprite) {
+        const drawSize = resolveImageFrameDrawSize(frame, roundedSize);
+        ctx.drawImage(
+            frame.source,
+            frame.x,
+            frame.y,
+            frame.width,
+            frame.height,
+            drawX - (drawSize.width / 2),
+            drawY - (drawSize.height / 2),
+            drawSize.width,
+            drawSize.height,
+        );
+        return;
+    }
+
+    ctx.drawImage(sprite, drawX - (sprite.width / 2), drawY - (sprite.height / 2));
+}
+
 function resolveRenderableFormShape(shape) {
     if (
         shape === 'glyph'
+        || shape === 'image'
         || shape === 'square'
         || shape === 'rectangle'
     ) {
@@ -746,6 +878,25 @@ function drawFormShapeParticle(engine, particle, shape, drawX = particle.x, draw
     fillParticleShape(engine, particle, 1, drawX, drawY);
 }
 
+function drawFormParticleBody(engine, particle, shape, drawX, drawY, renderColor) {
+    if (shape === 'glyph') {
+        drawFormGlyphParticle(engine, particle, drawX, drawY, renderColor);
+        return;
+    }
+
+    if (shape === 'image') {
+        drawFormImageParticle(engine, particle, drawX, drawY);
+        return;
+    }
+
+    setContextFillStyle(engine.ctx, renderColor);
+    drawFormShapeParticle(engine, particle, shape, drawX, drawY);
+}
+
+function isImageFormParticle(particle) {
+    return particle.type === 'form' && particle.formShape === 'image';
+}
+
 function drawFormParticle(engine, particle) {
     const ctx = engine.ctx;
     const alpha = particle.life / particle.maxLife;
@@ -753,7 +904,8 @@ function drawFormParticle(engine, particle) {
     const spinStrength = particle.formSpin ?? 0;
     const spinBlend = particle.formSpinBlend ?? (spinStrength > 0 ? 1 : 0);
     const hasSpinTransform = spinStrength > 0;
-    const renderColor = resolveFormParticleRenderColor(particle);
+    // Images keep their own colors: no palette highlight.
+    const renderColor = shape === 'image' ? particle.color : resolveFormParticleRenderColor(particle);
     setContextGlobalAlpha(ctx, alpha);
     if (hasSpinTransform) {
         const rawWidthScale = particle.formWidthScale ?? 1;
@@ -765,12 +917,7 @@ function drawFormParticle(engine, particle) {
             ctx.translate(particle.x, particle.y);
             ctx.rotate(particle.formSpinAngle ?? 0);
             ctx.scale(widthScale, 1);
-            if (shape === 'glyph') {
-                drawFormGlyphParticle(engine, particle, 0, 0, renderColor);
-            } else {
-                setContextFillStyle(ctx, renderColor);
-                drawFormShapeParticle(engine, particle, shape, 0, 0);
-            }
+            drawFormParticleBody(engine, particle, shape, 0, 0, renderColor);
             setBaseCanvasTransform(ctx, engine);
             return;
         }
@@ -779,24 +926,13 @@ function drawFormParticle(engine, particle) {
         ctx.translate(particle.x, particle.y);
         ctx.rotate(particle.formSpinAngle ?? 0);
         ctx.scale(widthScale, 1);
-        if (shape === 'glyph') {
-            drawFormGlyphParticle(engine, particle, 0, 0, renderColor);
-        } else {
-            setContextFillStyle(ctx, renderColor);
-            drawFormShapeParticle(engine, particle, shape, 0, 0);
-        }
+        drawFormParticleBody(engine, particle, shape, 0, 0, renderColor);
         ctx.restore?.();
         invalidateContextStateCache();
         return;
     }
 
-    if (shape === 'glyph') {
-        drawFormGlyphParticle(engine, particle, particle.x, particle.y, renderColor);
-        return;
-    }
-
-    setContextFillStyle(ctx, renderColor);
-    drawFormShapeParticle(engine, particle, shape);
+    drawFormParticleBody(engine, particle, shape, particle.x, particle.y, renderColor);
 }
 
 export function loop(engine, now) {
@@ -829,6 +965,7 @@ export function loop(engine, now) {
     for (let index = 0; index < engine.flashes.length; index += 1) {
         drawBurstCenterFlash(engine, engine.flashes[index]);
     }
+    let hasImageForms = false;
     for (let index = 0; index < engine.particles.length; index += 1) {
         const particle = engine.particles[index];
         if (particle.type === 'rocketEmber') {
@@ -841,6 +978,11 @@ export function loop(engine, now) {
             continue;
         }
 
+        if (isImageFormParticle(particle)) {
+            hasImageForms = true;
+            continue;
+        }
+
         drawFormParticle(engine, particle);
     }
 
@@ -849,6 +991,18 @@ export function loop(engine, now) {
     }
 
     ctx.globalCompositeOperation = 'source-over';
+
+    // Image forms are drawn with normal blending: additive 'lighter' would wash out
+    // multi-colored artwork where particles overlap.
+    if (hasImageForms) {
+        for (let index = 0; index < engine.particles.length; index += 1) {
+            const particle = engine.particles[index];
+            if (isImageFormParticle(particle)) {
+                drawFormParticle(engine, particle);
+            }
+        }
+    }
+
     setContextGlobalAlpha(ctx, 1);
 
     for (let index = 0; index < engine.rockets.length; index += 1) {
