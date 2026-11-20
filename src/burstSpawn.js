@@ -144,6 +144,45 @@ function randomQuantizedColorChannel() {
         : stepIndex * step;
 }
 
+/**
+ * Cumulative weights aligned with shapeSet, or null for the legacy uniform pick.
+ * Shapes in the set without a weight count as 1; weight 0 excludes a shape.
+ * If every weight is 0 the pick falls back to uniform.
+ */
+function resolveShapeCumulativeWeights(shapeSet, shapeWeights) {
+    if (!shapeWeights || shapeSet.length < 2) {
+        return null;
+    }
+
+    const cumulative = new Array(shapeSet.length);
+    let total = 0;
+    for (let index = 0; index < shapeSet.length; index += 1) {
+        const weight = shapeWeights[shapeSet[index]];
+        total += Number.isFinite(weight) && weight >= 0 ? weight : 1;
+        cumulative[index] = total;
+    }
+    return total > 0 ? cumulative : null;
+}
+
+function pickFormShape(shapeSet, shapeCount, cumulativeWeights) {
+    if (shapeCount === 1) {
+        return shapeSet[0];
+    }
+
+    if (!cumulativeWeights) {
+        return shapeSet[clamp(Math.floor(randomRange(0, shapeCount)), 0, shapeCount - 1)];
+    }
+
+    const total = cumulativeWeights[shapeCount - 1];
+    const roll = randomRange(0, total);
+    for (let index = 0; index < shapeCount; index += 1) {
+        if (roll < cumulativeWeights[index]) {
+            return shapeSet[index];
+        }
+    }
+    return shapeSet[shapeCount - 1];
+}
+
 function resolveBurstFormGlyphSet(glyph) {
     const symbols = Array.from(glyph);
     return symbols.length > 0 ? symbols : ['★'];
@@ -314,13 +353,18 @@ function spawnFormParticles(engine, request, startIndex, count) {
         singleColor,
         shape,
         glyph,
+        images,
+        shapeWeights,
     } = burstForms;
     const totalCount = request.totalCount;
     const formShapeSet = resolveBurstFormShapeSet(shape);
     const formShapeCount = formShapeSet.length;
+    const shapeCumulativeWeights = resolveShapeCumulativeWeights(formShapeSet, shapeWeights);
     const hasGlyphShape = formShapeSet.includes('glyph');
     const glyphSet = hasGlyphShape ? resolveBurstFormGlyphSet(glyph) : null;
     const glyphCount = glyphSet?.length ?? 0;
+    const imageFrames = Array.isArray(images) ? images : [];
+    const imageCount = imageFrames.length;
 
     for (let index = startIndex; index < startIndex + count; index += 1) {
         const angle = resolveDirectedBurstAngle(
@@ -385,11 +429,13 @@ function spawnFormParticles(engine, request, startIndex, count) {
         const wobbleStrength = Math.max(0, wobble ?? 0);
 
         const particle = engine.formPool.length > 0 ? engine.formPool.pop() : {};
-        const formShape = formShapeCount === 1
-            ? formShapeSet[0]
-            : formShapeSet[clamp(Math.floor(randomRange(0, formShapeCount)), 0, formShapeCount - 1)];
+        const formShape = pickFormShape(formShapeSet, formShapeCount, shapeCumulativeWeights);
         const formGlyph = formShape === 'glyph' && glyphSet
             ? glyphSet[clamp(Math.floor(randomRange(0, glyphCount)), 0, glyphCount - 1)]
+            : null;
+        // Frame is picked at spawn; whether the image is loaded is checked at draw time.
+        const formImage = formShape === 'image' && imageCount > 0
+            ? imageFrames[clamp(Math.floor(randomRange(0, imageCount)), 0, imageCount - 1)]
             : null;
 
         particle.type = 'form';
@@ -406,6 +452,7 @@ function spawnFormParticles(engine, request, startIndex, count) {
         particle.simple = simple;
         particle.formShape = formShape;
         particle.formGlyph = formGlyph;
+        particle.formImage = formImage;
         particle.formSpin = spinStrength;
         particle.formSpinActive = spinInitiallyActive;
         particle.formSpinBudget = spinBudget;
@@ -477,6 +524,10 @@ function spawnFormParticles(engine, request, startIndex, count) {
             const glyphSpriteSize = Math.max(GLYPH_SPRITE_SIZE_MIN, radius * GLYPH_SPRITE_RADIUS_SCALE);
             particle.glyphSpriteSize = glyphSpriteSize;
             particle.spriteKey = `${formGlyph}|${particle.color}|${Math.round(glyphSpriteSize)}`;
+        } else if (formShape === 'image') {
+            // Images use the glyph size of the same particle, so tuned size* values keep their look.
+            particle.glyphSpriteSize = Math.max(GLYPH_SPRITE_SIZE_MIN, radius * GLYPH_SPRITE_RADIUS_SCALE);
+            particle.spriteKey = null;
         } else {
             particle.glyphSpriteSize = null;
             particle.spriteKey = null;

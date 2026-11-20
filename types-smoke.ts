@@ -132,6 +132,14 @@ engine.confetti(120, 160);
 engine.launchPresetAt(launchPresetName, 120, 160);
 engine.launchRocketAt(120, 160);
 engine.launchRocketFromTo(20, 400, 120, 160);
+const atlasImage = new Image();
+engine.burst(80, 80, {
+    burstForms: {
+        shape: 'image|circle',
+        shapeWeights: { image: 3, circle: 1 },
+        images: [{ source: atlasImage, x: 0, y: 0, width: 128, height: 128 }],
+    },
+});
 engine.stop(false);
 engine.destroy();
 explicitEngine.destroy();

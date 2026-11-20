@@ -78,6 +78,8 @@ import {
 import {
     resolveBurstFormShape,
     normalizeBurstFormGlyph,
+    normalizeBurstFormImages,
+    normalizeBurstFormShapeWeights,
     resolveBurstColorMode,
     resolveBurstFlashColorMode,
     resolveBurstSparkShape,
@@ -156,6 +158,8 @@ function resolveBurstFormsConfig(burstForms = {}) {
         singleColor: normalizeHexColor(burstForms.singleColor, DEFAULT_BURST_SINGLE_COLOR),
         shape: resolveBurstFormShape(burstForms.shape ?? DEFAULT_BURST_FORMS_SHAPE),
         glyph: normalizeBurstFormGlyph(burstForms.glyph, DEFAULT_BURST_FORMS_GLYPH),
+        images: normalizeBurstFormImages(burstForms.images, []),
+        shapeWeights: normalizeBurstFormShapeWeights(burstForms.shapeWeights, null),
         palette: Array.isArray(burstForms.palette) && burstForms.palette.length > 0
             ? burstForms.palette
             : DEFAULT_BURST_PALETTE,

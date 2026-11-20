@@ -192,7 +192,7 @@ The public options are grouped by runtime area:
 - `performance`: queue throttling and render pressure thresholds.
 - `rocket`: rocket trail, color, speed, duration, and cascade behavior.
 - `rocketTailEmbers`: ember particles emitted by rockets.
-- `burstForms`: circle, square, rectangle, glyph, and mixed form particles.
+- `burstForms`: circle, square, rectangle, glyph, image, and mixed form particles.
 - `burstSparks`: spark trails and fade/spindle/uniform spark shapes.
 - `burstCenterFlash`: radial center flash.
 - `burstTwinkleCloud`: delayed twinkle particles around a burst.
@@ -221,6 +221,40 @@ fireworks.burst(x, y, {
     },
 });
 ```
+
+### Image forms and shape weights
+
+The `image` shape draws frames of an image or atlas in their own colors. Each particle picks a
+random frame from `burstForms.images`; repeat a frame to raise its share. `shapeWeights` sets the
+relative share of each shape listed in `shape`.
+
+```js
+const atlas = new Image();
+atlas.src = '/sprites/particles.webp';
+
+fireworks.burst(x, y, {
+    burstForms: {
+        shape: 'image|circle',
+        shapeWeights: { image: 3, circle: 1 },
+        images: [
+            { source: atlas, x: 0, y: 0, width: 128, height: 128 },
+            { source: atlas, x: 128, y: 0, width: 128, height: 128 },
+        ],
+    },
+});
+```
+
+- Size: the longer frame side equals the glyph size of the same particle
+  (`radius × 3.2`, at least 8 px); aspect ratio is kept.
+- Palette and `highlight` do not apply to images. Fade, spin, and wobble work as for other forms.
+- Image forms are drawn with normal blending, other forms keep additive blending.
+- Frames are pre-scaled per size and cached like glyph sprites.
+- A frame whose image is not loaded yet, is out of bounds, or is missing falls back to a
+  palette-colored circle. No exception is thrown.
+- `images` and `shapeWeights` can be passed per launch; frame objects are kept by reference.
+- Without `shapeWeights` shapes are picked uniformly, exactly as before. A shape listed in
+  `shape` but missing in `shapeWeights` counts as 1; weight 0 excludes it. If all weights
+  are 0, the pick is uniform.
 
 Rocket cascade example:
 

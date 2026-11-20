@@ -52,7 +52,7 @@ export function resolveBurstEntityToggle(value) {
     return typeof value === 'boolean' ? value : null;
 }
 
-const BURST_FORM_SINGLE_SHAPES = ['circle', 'square', 'rectangle', 'glyph'];
+const BURST_FORM_SINGLE_SHAPES = ['circle', 'square', 'rectangle', 'glyph', 'image'];
 const BURST_FORM_MIX_SHAPES = ['circle', 'square', 'rectangle'];
 
 function appendUnique(list, value) {
@@ -134,6 +134,75 @@ export function normalizeBurstFormGlyph(glyph, fallback = '★') {
 
     const normalized = Array.from(trimmed).slice(0, BURST_FORM_GLYPH_LIMIT).join('');
     return normalized || fallback;
+}
+
+function isPositiveFinite(value) {
+    return Number.isFinite(value) && value > 0;
+}
+
+function isBurstFormImageFrame(frame) {
+    return (
+        !!frame
+        && typeof frame === 'object'
+        && !!frame.source
+        && typeof frame.source === 'object'
+        && Number.isFinite(frame.x)
+        && Number.isFinite(frame.y)
+        && frame.x >= 0
+        && frame.y >= 0
+        && isPositiveFinite(frame.width)
+        && isPositiveFinite(frame.height)
+    );
+}
+
+/**
+ * Image frames for the `image` form shape. Invalid entries are dropped.
+ * Frame objects are kept by reference: the source image is never cloned.
+ * `undefined` keeps the fallback (the current config value).
+ */
+export function normalizeBurstFormImages(images, fallback = []) {
+    if (images === undefined) {
+        return fallback;
+    }
+
+    if (!Array.isArray(images)) {
+        return [];
+    }
+
+    const normalized = [];
+    for (let index = 0; index < images.length; index += 1) {
+        if (isBurstFormImageFrame(images[index])) {
+            normalized.push(images[index]);
+        }
+    }
+    return normalized;
+}
+
+/**
+ * Relative weights of form shapes, e.g. `{ image: 3, circle: 1 }`.
+ * Unknown shapes and negative or non-finite weights are dropped.
+ * `undefined` keeps the fallback; `null` or an empty result disables weighting.
+ */
+export function normalizeBurstFormShapeWeights(weights, fallback = null) {
+    if (weights === undefined) {
+        return fallback;
+    }
+
+    if (!weights || typeof weights !== 'object' || Array.isArray(weights)) {
+        return null;
+    }
+
+    const normalized = {};
+    let hasWeight = false;
+    for (let index = 0; index < BURST_FORM_SINGLE_SHAPES.length; index += 1) {
+        const shape = BURST_FORM_SINGLE_SHAPES[index];
+        const weight = weights[shape];
+        if (Number.isFinite(weight) && weight >= 0) {
+            normalized[shape] = weight;
+            hasWeight = true;
+        }
+    }
+    return hasWeight ? normalized : null;
 }
 
 export function resolveBurstColorMode(value) {

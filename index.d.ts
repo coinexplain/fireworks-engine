@@ -16,9 +16,21 @@ export type FireworksMode = 'burst' | 'rocket';
 export type RocketCascadeMode = 'burst' | 'rocket';
 export type BurstColorMode = 'palette' | 'rgb' | 'single';
 export type BurstFlashColorMode = 'palette' | 'rgb' | 'single';
-export type BurstFormPrimitiveShape = 'circle' | 'square' | 'rectangle' | 'glyph';
+export type BurstFormPrimitiveShape = 'circle' | 'square' | 'rectangle' | 'glyph' | 'image';
 export type BurstFormShape = BurstFormPrimitiveShape | 'mix';
 export type BurstFormShapeInput = BurstFormShape | `${BurstFormShape}|${string}`;
+/** Image source accepted by `CanvasRenderingContext2D.drawImage`. */
+export type BurstFormImageSource = HTMLImageElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas;
+/** One frame of an image (or atlas) for the `image` form shape. Kept by reference, never cloned. */
+export interface BurstFormImageFrame {
+    source: BurstFormImageSource;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+/** Relative shape weights, e.g. `{ image: 3, circle: 1 }`. Missing shapes count as 1, 0 excludes. */
+export type BurstFormShapeWeights = Partial<Record<BurstFormPrimitiveShape, number>>;
 export type BurstSparkShape = 'uniform' | 'spindle' | 'fade';
 
 export type FireworksTimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
@@ -126,6 +138,10 @@ export interface FireworksBurstFormsOptions {
     wobble?: number;
     shape?: BurstFormShapeInput;
     glyph?: string;
+    /** Frames for the `image` shape; each particle picks one at random. Repeat a frame to raise its share. */
+    images?: readonly BurstFormImageFrame[];
+    /** Relative shape weights; without it shapes from `shape` are picked uniformly. */
+    shapeWeights?: BurstFormShapeWeights | null;
     colorMode?: BurstColorMode;
     singleColor?: HexColorString | string;
 }
@@ -279,6 +295,8 @@ export interface ResolvedBurstFormsConfig {
     simple?: boolean;
     shape: BurstFormShapeInput;
     glyph: string;
+    images: readonly BurstFormImageFrame[];
+    shapeWeights: BurstFormShapeWeights | null;
     colorMode: BurstColorMode;
     singleColor: string;
 }
@@ -358,6 +376,7 @@ export interface FireworksFormParticle {
     simple?: boolean;
     formShape: BurstFormPrimitiveShape;
     formGlyph: string;
+    formImage: BurstFormImageFrame | null;
     formSpin: number;
     formSpinPhase: number;
     formSpinPhaseSpeed: number;

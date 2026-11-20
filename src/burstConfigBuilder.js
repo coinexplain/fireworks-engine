@@ -41,6 +41,8 @@ import {
     resolveBurstEntityToggle,
     resolveBurstFormShape,
     normalizeBurstFormGlyph,
+    normalizeBurstFormImages,
+    normalizeBurstFormShapeWeights,
     resolveBurstColorMode,
     resolveBurstFlashColorMode,
     resolveBurstSparkShape,
@@ -123,6 +125,8 @@ function resolveBurstFormsConfig(formsInput, formsCurrent, normalizedOptions, si
         simple,
         shape: resolveBurstFormShape(formsInput.shape ?? formsCurrent.shape),
         glyph: normalizeBurstFormGlyph(formsInput.glyph, formsCurrent.glyph),
+        images: normalizeBurstFormImages(formsInput.images, formsCurrent.images ?? []),
+        shapeWeights: normalizeBurstFormShapeWeights(formsInput.shapeWeights, formsCurrent.shapeWeights ?? null),
         colorMode: resolveBurstColorMode(formsInput.colorMode ?? formsCurrent.colorMode),
         singleColor: normalizeHexColor(formsInput.singleColor, formsCurrent.singleColor),
     };
