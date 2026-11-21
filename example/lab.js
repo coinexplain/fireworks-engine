@@ -27,6 +27,9 @@ import {
     FIREWORKS_ENGINE_LAB_ROCKET_COLOR_MODES,
     FIREWORKS_ENGINE_LAB_ROCKET_CASCADE_BOUNDS,
     FIREWORKS_ENGINE_LAB_ROCKET_TAIL_EMBERS_BOUNDS,
+    FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS,
+    FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS,
+    FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS,
     createDefaultFireworksEngineLabSettings,
     loadFireworksEngineLabSettings,
     saveFireworksEngineLabSettings,
@@ -40,8 +43,18 @@ import {
     buildRocketOptions,
     buildRocketTailEmbersOptions,
     buildSettingsSnippet,
+    resolveBurstFormPickedShapes,
     resolveBurstFormShapeTokens,
 } from './snippetBuilders.js';
+import {
+    buildGridFrames,
+    createDemoAtlas,
+    loadImageFile,
+    resolveGridCellAt,
+    resolveGridLayout,
+    selectFramesByCells,
+} from './labImageAtlas.js';
+import { showBurstMarker } from './burstMarkers.js';
 
 const app = document.getElementById('app');
 
@@ -174,7 +187,50 @@ const BURST_TWINKLE_CLOUD_TUNING_CONTROLS = Object.freeze([
     { id: 'spawnSpread', label: 'Spawn spread', min: FIREWORKS_ENGINE_LAB_BURST_TWINKLE_CLOUD_BOUNDS.spawnSpread.min, max: FIREWORKS_ENGINE_LAB_BURST_TWINKLE_CLOUD_BOUNDS.spawnSpread.max, step: 0.1 },
 ]);
 
+const SHAPE_WEIGHT_STEP = 0.1;
+const IMAGE_CELL_SIZE_CONTROL = Object.freeze({
+    id: 'imageCellSize',
+    label: 'Atlas cell size',
+    min: FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS.min,
+    max: FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS.max,
+    step: 1,
+});
+function buildGridSpacingControl(id, label) {
+    return {
+        id,
+        label,
+        min: FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS.min,
+        max: FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS.max,
+        step: 1,
+    };
+}
+const IMAGE_GRID_CONTROLS = Object.freeze([
+    IMAGE_CELL_SIZE_CONTROL,
+    buildGridSpacingControl('imageGridOffsetX', 'Grid offset X'),
+    buildGridSpacingControl('imageGridOffsetY', 'Grid offset Y'),
+    buildGridSpacingControl('imageGridGapX', 'Gap X'),
+    buildGridSpacingControl('imageGridGapY', 'Gap Y'),
+]);
+const IMAGE_GRID_PATHS = new Set(IMAGE_GRID_CONTROLS.map((control) => `burstForms.${control.id}`));
+const BURST_EVENT_LOG_LIMIT = 12;
+const VICTORY_TRACKING_LAUNCH = Object.freeze({ trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95 });
+
+function buildShapeWeightControl(shapeToken) {
+    return {
+        id: shapeToken,
+        label: `${shapeToken} weight`,
+        min: FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS.min,
+        max: FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS.max,
+        step: SHAPE_WEIGHT_STEP,
+    };
+}
+
 const RANGE_CONTROL_BY_PATH = new Map([
+    ...IMAGE_GRID_CONTROLS.map((control) => [`burstForms.${control.id}`, control]),
+    ...['circle', 'square', 'rectangle', 'glyph', 'image'].map((shapeToken) => [
+        `burstForms.shapeWeights.${shapeToken}`,
+        buildShapeWeightControl(shapeToken),
+    ]),
     ...GLOBAL_TUNING_CONTROLS.map((control) => [control.id, control]),
     ...ROCKET_TUNING_CONTROLS.map((control) => [`rocket.${control.id}`, control]),
     ...ROCKET_CASCADE_CONTROLS.map((control) => [`rocket.cascade.${control.id}`, control]),
@@ -191,6 +247,163 @@ let isTargetModeEnabled = false;
 let runtimeRef = null;
 let targetLaunchGesture = null;
 let presetLaunchSource = 'preset';
+// Image frames are not persisted: the demo atlas is rebuilt, a loaded file must be loaded again.
+let labAtlas = createLabDemoAtlas(settings.burstForms.imageCellSize);
+let burstEventLog = [];
+let burstEventCount = 0;
+let showBurstMarkers = true;
+let trackedVictoryRuntime = null;
+let trackedVictoryStatus = 'Not launched yet.';
+
+function createLabDemoAtlas(cellSize) {
+    const source = createDemoAtlas(cellSize);
+    return { label: 'Demo atlas (8 elements)', source, objectUrl: null, frames: buildGridFrames(source, cellSize) };
+}
+
+// Grid of a loaded atlas. The demo atlas is drawn without margins, so it always uses a plain grid.
+function resolveLabGrid() {
+    if (!labAtlas?.objectUrl) {
+        return {};
+    }
+    const { imageGridOffsetX, imageGridOffsetY, imageGridGapX, imageGridGapY } = settings.burstForms;
+    return { offsetX: imageGridOffsetX, offsetY: imageGridOffsetY, gapX: imageGridGapX, gapY: imageGridGapY };
+}
+
+function rebuildLabAtlasFrames() {
+    if (!labAtlas.objectUrl) {
+        labAtlas = createLabDemoAtlas(settings.burstForms.imageCellSize);
+        return;
+    }
+    labAtlas = { ...labAtlas, frames: buildGridFrames(labAtlas.source, settings.burstForms.imageCellSize, resolveLabGrid()) };
+}
+
+function resolveActiveImageGroup() {
+    const { imageGroups, imageGroup } = settings.burstForms;
+    return imageGroups.find((group) => group.name === imageGroup) ?? null;
+}
+
+// Frames used by launches: the active group's cells, or every non-empty cell without a group.
+function resolveActiveImageFrames() {
+    const group = resolveActiveImageGroup();
+    return group ? selectFramesByCells(labAtlas.frames, group.cells) : labAtlas.frames;
+}
+
+function buildLabBurstFormsOptions(burstForms) {
+    return {
+        ...buildBurstFormsOptions(burstForms),
+        images: resolveActiveImageFrames(),
+    };
+}
+
+function updateImageGroups(nextGroups, nextActiveName = settings.burstForms.imageGroup) {
+    settings.burstForms.imageGroups = nextGroups;
+    settings.burstForms.imageGroup = nextActiveName;
+    saveSettings();
+    render();
+}
+
+function createImageGroup(rawName) {
+    const name = String(rawName ?? '').trim();
+    if (!name) {
+        updateStatus('Type a group name first, e.g. bamboo or seasons.');
+        return;
+    }
+    if (settings.burstForms.imageGroups.some((group) => group.name === name)) {
+        updateImageGroups(settings.burstForms.imageGroups, name);
+        return;
+    }
+    updateImageGroups([...settings.burstForms.imageGroups, { name, cells: [] }], name);
+    statusText = `Group "${name}" created. Click cells in the atlas preview to add them.`;
+    render();
+}
+
+function deleteActiveImageGroup() {
+    const group = resolveActiveImageGroup();
+    if (!group) {
+        return;
+    }
+    updateImageGroups(settings.burstForms.imageGroups.filter((entry) => entry !== group), '');
+}
+
+function toggleCellInActiveGroup(cellIndex) {
+    const group = resolveActiveImageGroup();
+    if (!group) {
+        updateStatus('Select or create a group first: cells are picked into the active group.');
+        return;
+    }
+    if (!labAtlas.frames.some((frame) => frame.cellIndex === cellIndex)) {
+        updateStatus(`Cell ${cellIndex} is empty and cannot be used.`);
+        return;
+    }
+    const cells = group.cells.includes(cellIndex)
+        ? group.cells.filter((cell) => cell !== cellIndex)
+        : [...group.cells, cellIndex].sort((left, right) => left - right);
+    updateImageGroups(settings.burstForms.imageGroups.map((entry) => (entry === group ? { ...entry, cells } : entry)));
+}
+
+function formatBurstEvent(entry) {
+    const parts = [`#${entry.number}`, entry.source, `x ${Math.round(entry.x)}`, `y ${Math.round(entry.y)}`];
+    if (entry.sequence) {
+        parts.push(`index ${entry.sequence.index}`);
+        if (entry.sequence.isFirst) parts.push('FIRST');
+        if (entry.sequence.isLast) parts.push('LAST');
+    }
+    return parts.join(' · ');
+}
+
+function renderBurstEventLogItems() {
+    if (burstEventLog.length === 0) {
+        return '<li class="burstEventEmpty">No bursts yet.</li>';
+    }
+    return burstEventLog.map((entry) => {
+        const boundary = entry.sequence?.isFirst || entry.sequence?.isLast;
+        return `<li class="burstEventItem${boundary ? ' burstEventBoundary' : ''}">${escapeHtml(formatBurstEvent(entry))}</li>`;
+    }).join('');
+}
+
+function refreshBurstEventPanel() {
+    const list = app.querySelector('[data-burst-event-log]');
+    if (list) list.innerHTML = renderBurstEventLogItems();
+    const counter = app.querySelector('[data-burst-event-count]');
+    if (counter) counter.textContent = String(burstEventCount);
+    const victoryStatus = app.querySelector('[data-victory-status]');
+    if (victoryStatus) victoryStatus.textContent = trackedVictoryStatus;
+}
+
+// onBurst runs synchronously inside the engine loop: keep it cheap, no full re-render.
+function recordBurst(source, { x, y, sequence }) {
+    burstEventCount += 1;
+    burstEventLog = [{ number: burstEventCount, source, x, y, sequence }, ...burstEventLog].slice(0, BURST_EVENT_LOG_LIMIT);
+    if (showBurstMarkers) {
+        showBurstMarker(x, y, sequence);
+    }
+    refreshBurstEventPanel();
+}
+
+function destroyTrackedVictoryRuntime() {
+    trackedVictoryRuntime?.destroy();
+    trackedVictoryRuntime = null;
+}
+
+// Tracking accepts only default engine settings, so the tracked launch uses its own engine
+// instead of the lab-configured one (which would return false).
+function launchTrackedVictory() {
+    destroyTrackedVictoryRuntime();
+    trackedVictoryRuntime = createFireworksEngine({
+        canvas: { appendTarget: document.body, maxDevicePixelRatio: 2, zIndex: 25 },
+        onBurst: (event) => recordBurst('victory', event),
+    });
+    const accepted = trackedVictoryRuntime.launchPresetAt(
+        'victory-finale',
+        window.innerWidth * 0.5,
+        window.innerHeight * 0.35,
+        VICTORY_TRACKING_LAUNCH,
+    );
+    trackedVictoryStatus = accepted
+        ? 'victory-finale launched with trackBurstSequence: FIRST and LAST bursts are marked.'
+        : 'Launch rejected: tracking supports only the documented victory configuration.';
+    refreshBurstEventPanel();
+}
 
 function destroyRuntime() {
     runtimeRef?.destroy();
@@ -207,7 +420,10 @@ function applyLiveLabToggles(runtime, currentSettings) {
 
 function createLabRuntime() {
     destroyRuntime();
-    runtimeRef = createFireworksEngine(buildRuntimeOptions(settings));
+    runtimeRef = createFireworksEngine({
+        ...buildRuntimeOptions(settings),
+        onBurst: (event) => recordBurst('lab', event),
+    });
     applyLiveLabToggles(runtimeRef, settings);
     return runtimeRef;
 }
@@ -297,7 +513,7 @@ function buildRuntimeOptions(currentSettings) {
         performance: buildPerformanceOptions(currentSettings.performance),
         rocket: buildRocketOptions(currentSettings.rocket),
         rocketTailEmbers: buildRocketTailEmbersOptions(currentSettings.rocketTailEmbers),
-        burstForms: buildBurstFormsOptions(currentSettings.burstForms),
+        burstForms: buildLabBurstFormsOptions(currentSettings.burstForms),
         burstSparks: buildBurstSparksOptions(currentSettings.burstSparks),
         burstCenterFlash: buildBurstCenterFlashOptions(currentSettings.burstCenterFlash),
         burstTwinkleCloud: buildBurstTwinkleCloudOptions(currentSettings.burstTwinkleCloud),
@@ -373,7 +589,7 @@ function buildTargetLaunchOptions(currentSettings) {
         burstPalette: TARGET_LAUNCH_BURST_PALETTE,
         rocket: buildRocketOptions(currentSettings.rocket),
         rocketTailEmbers: buildRocketTailEmbersOptions(currentSettings.rocketTailEmbers),
-        burstForms: buildBurstFormsOptions(currentSettings.burstForms),
+        burstForms: buildLabBurstFormsOptions(currentSettings.burstForms),
         burstSparks: buildBurstSparksOptions(currentSettings.burstSparks),
         burstCenterFlash: buildBurstCenterFlashOptions(currentSettings.burstCenterFlash),
         burstTwinkleCloud: buildBurstTwinkleCloudOptions(currentSettings.burstTwinkleCloud),
@@ -405,7 +621,7 @@ function buildPresetLaunchOptions(presetId, currentSettings) {
         sizeScale: currentSettings.sizeScale,
         rocket: buildRocketOptions(currentSettings.rocket),
         rocketTailEmbers: buildRocketTailEmbersOptions(currentSettings.rocketTailEmbers),
-        burstForms: buildBurstFormsOptions(currentSettings.burstForms),
+        burstForms: buildLabBurstFormsOptions(currentSettings.burstForms),
         burstSparks: buildBurstSparksOptions(currentSettings.burstSparks),
         burstCenterFlash: buildBurstCenterFlashOptions(currentSettings.burstCenterFlash),
         burstTwinkleCloud: buildBurstTwinkleCloudOptions(currentSettings.burstTwinkleCloud),
@@ -514,7 +730,31 @@ function toggleSection(sectionId, isOpen) {
 
 function stopEngine() {
     runtimeRef?.stop(true);
+    destroyTrackedVictoryRuntime();
     updateStatus('Stopped and cleared the canvas.');
+}
+
+async function loadLabAtlasFile(file) {
+    try {
+        const image = await loadImageFile(file);
+        if (labAtlas.objectUrl) URL.revokeObjectURL(labAtlas.objectUrl);
+        labAtlas = {
+            label: `${file.name} (${image.naturalWidth}×${image.naturalHeight})`,
+            source: image,
+            objectUrl: image.src,
+            frames: [],
+        };
+        rebuildLabAtlasFrames();
+        updateStatus(`Loaded atlas ${file.name}: ${labAtlas.frames.length} non-empty cells.`);
+    } catch (error) {
+        updateStatus(`Could not load ${file.name}: ${error?.message || error}`);
+    }
+}
+
+function useDemoAtlas() {
+    if (labAtlas.objectUrl) URL.revokeObjectURL(labAtlas.objectUrl);
+    labAtlas = createLabDemoAtlas(settings.burstForms.imageCellSize);
+    updateStatus('Using the built-in demo atlas.');
 }
 
 function resetLabSettings() {
@@ -757,9 +997,195 @@ function renderBurstFormsSection() {
                     />
                 </label>
 
+                ${renderImageAtlasBlock(selectedShapeTokens.includes('image'))}
+
+                ${renderShapeWeightsBlock()}
+
                 <div class="tuningBlock ${settings.burstForms.enabled ? '' : 'tuningBlockMuted'}">
                     <div class="tuningGrid">${renderRangeControls('burstForms', BURST_FORM_TUNING_CONTROLS)}</div>
                 </div>
+            </div>
+        </details>
+    `;
+}
+
+function renderImageGroupControls() {
+    const activeGroup = resolveActiveImageGroup();
+    const chips = [
+        { name: '', label: `All frames (${labAtlas.frames.length})` },
+        ...settings.burstForms.imageGroups.map((group) => ({
+            name: group.name,
+            label: `${group.name} (${selectFramesByCells(labAtlas.frames, group.cells).length})`,
+        })),
+    ];
+    return `
+        <div class="imageGroupRow">
+            ${chips.map((chip) => `
+                <button
+                    type="button"
+                    class="diagnosticButton ${chip.name === (activeGroup?.name ?? '') ? 'isActive' : ''}"
+                    data-target-mode-ignore="true"
+                    data-action="image-group-select"
+                    data-group-name="${escapeHtml(chip.name)}"
+                >${escapeHtml(chip.label)}</button>
+            `).join('')}
+        </div>
+        <div class="imageGroupRow">
+            <input
+                class="glyphInput imageGroupName"
+                type="text"
+                maxlength="24"
+                placeholder="New group name"
+                data-target-mode-ignore="true"
+                data-image-group-name
+            />
+            <button type="button" class="diagnosticButton" data-target-mode-ignore="true" data-action="image-group-create">Add group</button>
+            ${activeGroup ? `<button type="button" class="diagnosticButton" data-target-mode-ignore="true" data-action="image-group-delete">Delete "${escapeHtml(activeGroup.name)}"</button>` : ''}
+        </div>
+        <p class="imageAtlasHint">
+            ${activeGroup
+        ? `Click cells in the preview to add or remove them from "${escapeHtml(activeGroup.name)}": launches use only these frames. Cell numbers depend on the atlas and the cell size.`
+        : 'Without a group every non-empty cell is used. Add a group (e.g. bamboo, seasons) and click its cells to restrict a launch to them.'}
+        </p>
+    `;
+}
+
+function renderImageAtlasBlock(hasImageShape) {
+    const frameCount = resolveActiveImageFrames().length;
+    return `
+        <div class="imageAtlasBlock ${hasImageShape ? '' : 'imageAtlasBlockMuted'}" data-target-mode-ignore="true">
+            <div class="tuningMeta">
+                ${renderSettingLabel('Image frames', 'images', 'burstForms.images')}
+                <span class="tuningValue">${frameCount} frame${frameCount === 1 ? '' : 's'} in use</span>
+            </div>
+            <p class="imageAtlasHint">
+                ${escapeHtml(labAtlas.label)}. Each image particle picks a random frame of the active group.
+                Applies to Lab source and Target mode. Enable the IMAGE shape to use it.
+            </p>
+            ${renderImageGroupControls()}
+            <div class="imageAtlasPreview" data-image-atlas-preview></div>
+            <div class="imageAtlasActions">
+                <label class="imageAtlasFile">
+                    <span>Load atlas file…</span>
+                    <input type="file" accept="image/*" data-target-mode-ignore="true" data-action="image-atlas-file" />
+                </label>
+                <button type="button" class="diagnosticButton" data-target-mode-ignore="true" data-action="image-atlas-demo">Use demo atlas</button>
+            </div>
+            <p class="imageAtlasHint">
+                Grid: the first cell starts at offset X/Y, the next ones every cell size + gap.
+                Offset and gap apply to a loaded atlas; the demo atlas has no margins.
+            </p>
+            <div class="tuningGrid">${renderRangeControls('burstForms', IMAGE_GRID_CONTROLS)}</div>
+        </div>
+    `;
+}
+
+function renderShapeWeightsBlock() {
+    const pickedShapes = resolveBurstFormPickedShapes(settings.burstForms.shape);
+    const isEnabled = settings.burstForms.shapeWeightsEnabled;
+    return `
+        <div class="shapeWeightsBlock" data-target-mode-ignore="true">
+            <label class="toggleControl">
+                <input
+                    type="checkbox"
+                    ${isEnabled ? 'checked' : ''}
+                    data-target-mode-ignore="true"
+                    data-action="checkbox"
+                    data-path="burstForms.shapeWeightsEnabled"
+                />
+                ${renderSettingLabel('Shape weights', 'shapeWeights', 'burstForms.shapeWeights')}
+            </label>
+            <p class="imageAtlasHint">
+                ${isEnabled
+        ? 'Relative share of each selected shape; 0 excludes a shape. MIX counts as circle, square and rectangle.'
+        : 'Off: shapes are picked uniformly, as before 1.1.0.'}
+            </p>
+            ${isEnabled && pickedShapes.length > 1
+        ? `<div class="tuningGrid">${renderRangeControls('burstForms.shapeWeights', pickedShapes.map(buildShapeWeightControl))}</div>`
+        : ''}
+            ${isEnabled && pickedShapes.length <= 1 ? '<p class="imageAtlasHint">Select two or more shapes to weight them.</p>' : ''}
+        </div>
+    `;
+}
+
+function mountImageAtlasPreview() {
+    const container = app.querySelector('[data-image-atlas-preview]');
+    if (!container) {
+        return;
+    }
+    const preview = document.createElement('canvas');
+    const scale = Math.min(1, 480 / Math.max(1, labAtlas.source.naturalWidth || labAtlas.source.width));
+    const width = Math.max(1, Math.round((labAtlas.source.naturalWidth || labAtlas.source.width) * scale));
+    const height = Math.max(1, Math.round((labAtlas.source.naturalHeight || labAtlas.source.height) * scale));
+    preview.width = width;
+    preview.height = height;
+    preview.className = 'imageAtlasCanvas';
+    const ctx = preview.getContext('2d');
+    ctx.drawImage(labAtlas.source, 0, 0, width, height);
+
+    const activeGroup = resolveActiveImageGroup();
+    const activeCells = new Set(activeGroup?.cells ?? []);
+    ctx.lineWidth = 1;
+    ctx.font = '600 10px system-ui, sans-serif';
+    ctx.textBaseline = 'top';
+    labAtlas.frames.forEach((frame) => {
+        const x = frame.x * scale;
+        const y = frame.y * scale;
+        const w = frame.width * scale;
+        const h = frame.height * scale;
+        const isPicked = !activeGroup || activeCells.has(frame.cellIndex);
+        if (activeGroup && !isPicked) {
+            ctx.fillStyle = 'rgba(10, 16, 30, 0.62)';
+            ctx.fillRect(x, y, w, h);
+        }
+        ctx.strokeStyle = isPicked ? 'rgba(255, 209, 102, 0.95)' : 'rgba(191, 219, 254, 0.35)';
+        ctx.lineWidth = activeGroup && isPicked ? 2 : 1;
+        ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+        ctx.fillStyle = isPicked ? '#ffd166' : 'rgba(191, 219, 254, 0.7)';
+        ctx.fillText(String(frame.cellIndex), x + 4, y + 3);
+    });
+
+    // Click a cell to toggle it in the active group.
+    preview.addEventListener('click', (event) => {
+        const rect = preview.getBoundingClientRect();
+        const sourceX = ((event.clientX - rect.left) / rect.width) * (width / scale);
+        const sourceY = ((event.clientY - rect.top) / rect.height) * (height / scale);
+        const layout = resolveGridLayout(labAtlas.source, settings.burstForms.imageCellSize, resolveLabGrid());
+        const cellIndex = resolveGridCellAt(layout, sourceX, sourceY);
+        if (cellIndex < 0) {
+            return;
+        }
+        toggleCellInActiveGroup(cellIndex);
+    });
+    preview.style.cursor = activeGroup ? 'pointer' : 'default';
+    preview.setAttribute('data-target-mode-ignore', 'true');
+    container.replaceChildren(preview);
+}
+
+function renderBurstEventsSection() {
+    return `
+        <details class="entitySection" data-section-id="burstEvents" ${settings.sectionState.burstEvents ? 'open' : ''}>
+            <summary class="entitySummary" data-target-mode-ignore="true">
+                <span class="summaryTitle">Burst Events</span>
+                <span class="summaryHint">onBurst + tracked victory boundaries</span>
+            </summary>
+            <div class="entityBody" data-target-mode-ignore="true">
+                <p class="imageAtlasHint">
+                    Every lab launch is created with <code>onBurst</code>: each logical burst is logged and marked
+                    on screen once, including rocket detonations and cascade children.
+                </p>
+                <div class="diagnosticToggleRow">
+                    <button type="button" class="diagnosticButton ${showBurstMarkers ? 'isActive' : ''}" data-target-mode-ignore="true" data-action="toggle-burst-markers">Markers</button>
+                    <button type="button" class="diagnosticButton" data-target-mode-ignore="true" data-action="clear-burst-log">Clear log</button>
+                    <button type="button" class="diagnosticButton" data-target-mode-ignore="true" data-action="victory-boundaries">Victory boundaries</button>
+                </div>
+                <p class="imageAtlasHint">
+                    Victory boundaries: <code>launchPresetAt('victory-finale', x, y, { trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95 })</code>
+                    on a default-settings engine; the first and last bursts carry <code>sequence.isFirst</code> / <code>isLast</code>.
+                </p>
+                <p class="status" data-victory-status>${escapeHtml(trackedVictoryStatus)}</p>
+                <p class="imageAtlasHint">Bursts: <strong data-burst-event-count>${burstEventCount}</strong></p>
+                <ol class="burstEventLog" data-burst-event-log>${renderBurstEventLogItems()}</ol>
             </div>
         </details>
     `;
@@ -1017,8 +1443,10 @@ function render() {
             ${renderRocketTailEmbersSection()}
             ${renderBurstCenterFlashSection()}
             ${renderBurstTwinkleCloudSection()}
+            ${renderBurstEventsSection()}
         </section>
     `;
+    mountImageAtlasPreview();
 }
 app.addEventListener('click', (event) => {
     const target = event.target;
@@ -1068,6 +1496,44 @@ app.addEventListener('click', (event) => {
     if (action === 'toggle-boolean') {
         const path = actionTarget.getAttribute('data-path');
         updateSetting(path, !getByPath(settings, path));
+        return;
+    }
+
+    if (action === 'image-atlas-demo') {
+        useDemoAtlas();
+        return;
+    }
+
+    if (action === 'image-group-select') {
+        updateImageGroups(settings.burstForms.imageGroups, actionTarget.getAttribute('data-group-name') || '');
+        return;
+    }
+
+    if (action === 'image-group-create') {
+        createImageGroup(app.querySelector('[data-image-group-name]')?.value);
+        return;
+    }
+
+    if (action === 'image-group-delete') {
+        deleteActiveImageGroup();
+        return;
+    }
+
+    if (action === 'toggle-burst-markers') {
+        showBurstMarkers = !showBurstMarkers;
+        render();
+        return;
+    }
+
+    if (action === 'clear-burst-log') {
+        burstEventLog = [];
+        burstEventCount = 0;
+        refreshBurstEventPanel();
+        return;
+    }
+
+    if (action === 'victory-boundaries') {
+        launchTrackedVictory();
     }
 });
 
@@ -1133,6 +1599,19 @@ app.addEventListener('change', (event) => {
 
     if (action === 'preset-launch-source') {
         presetLaunchSource = target.value === 'lab' ? 'lab' : 'preset';
+        render();
+        return;
+    }
+
+    if (action === 'image-atlas-file') {
+        const file = target.files?.[0];
+        if (file) void loadLabAtlasFile(file);
+        return;
+    }
+
+    // Grid sliders re-slice the atlas once released, not on every input step.
+    if (action === 'range' && IMAGE_GRID_PATHS.has(path)) {
+        rebuildLabAtlasFrames();
         render();
     }
 });
@@ -1226,8 +1705,17 @@ document.addEventListener('pointercancel', () => {
     targetLaunchGesture = null;
 }, true);
 
+app.addEventListener('keydown', (event) => {
+    const target = event.target;
+    if (event.key === 'Enter' && target instanceof HTMLInputElement && target.hasAttribute('data-image-group-name')) {
+        event.preventDefault();
+        createImageGroup(target.value);
+    }
+});
+
 window.addEventListener('beforeunload', () => {
     destroyRuntime();
+    destroyTrackedVictoryRuntime();
 });
 
 render();

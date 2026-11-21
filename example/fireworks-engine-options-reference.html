@@ -520,6 +520,7 @@
                     <a href="#start-time">Start-time</a>
                     <a href="#canvas">Canvas</a>
                     <a href="#runtime">Runtime</a>
+                    <a href="#burst-events">Burst Events</a>
                     <a href="#performance">Performance</a>
                     <a href="#rocket">Rocket</a>
                     <a href="#tail-embers">Tail Embers</a>
@@ -966,6 +967,59 @@
                             <td>
                                 <span lang="en">Custom time source for the render loop.</span>
                                 <span lang="ru">Кастомный источник времени для цикла рендера.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="burst-events">Burst Events <span lang="ru">(События взрывов)</span></h2>
+            <p lang="en">Synchronization hooks for another effect or a sound. They do not change visuals.</p>
+            <p lang="ru">Хуки синхронизации с другим эффектом или звуком. На картинку не влияют.</p>
+            <div class="table-container">
+                <table class="table-standard">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Default</th>
+                            <th><span lang="en">What it does</span><span lang="ru">Что делает</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>onBurst</code></td>
+                            <td><span class="badge val-str">none</span></td>
+                            <td>
+                                <span lang="en">1.0.1. Constructor-only callback <code>({ x, y, sequence? })</code>,
+                                    called synchronously once per logical burst after its first visual component is
+                                    created — including rocket detonations and cascade children; queued bursts notify
+                                    on materialization. Empty bursts do not notify. Exceptions are isolated from
+                                    rendering. Not replaced by <code>start</code>, launches or
+                                    <code>updateOptions</code>.</span>
+                                <span lang="ru">1.0.1. Колбэк только при создании движка:
+                                    <code>({ x, y, sequence? })</code>, синхронно один раз на логический взрыв после
+                                    создания его первого видимого компонента — включая детонации ракет и дочерние
+                                    взрывы каскада; взрывы из очереди сообщают при материализации. Пустые взрывы не
+                                    сообщают. Исключения изолированы от рендера. <code>start</code>, запуски и
+                                    <code>updateOptions</code> его не заменяют.</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code>trackBurstSequence</code></td>
+                            <td><span class="badge val-bool">false</span></td>
+                            <td>
+                                <span lang="en">1.0.2. Launch option for <code>launchPresetAt('victory-finale', x, y,
+                                    { trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95 })</code> only, on an
+                                    engine with default visual and performance settings. Adds
+                                    <code>sequence: { id, index, isFirst, isLast }</code> to <code>onBurst</code>; the
+                                    last burst is flagged in its own callback. Any other configuration returns
+                                    <code>false</code> before launching.</span>
+                                <span lang="ru">1.0.2. Опция запуска только для <code>launchPresetAt('victory-finale',
+                                    x, y, { trackBurstSequence: true, sizeScale: 1.05, timeScale: 0.95 })</code> на
+                                    движке с настройками картинки и производительности по умолчанию. Добавляет в
+                                    <code>onBurst</code> <code>sequence: { id, index, isFirst, isLast }</code>;
+                                    последний взрыв отмечается в своём же колбэке. Любая другая конфигурация
+                                    возвращает <code>false</code> до запуска.</span>
                             </td>
                         </tr>
                     </tbody>
@@ -1498,17 +1552,55 @@
                             <td><code>burstForms.shape</code></td>
                             <td><span class="badge val-str">'circle'</span></td>
                             <td><span lang="en">Shape: <code>'circle'</code>, <code>'square'</code>,
-                                    <code>'rectangle'</code>, <code>'glyph'</code>, <code>'mix'</code>, or
-                                    combined.</span><span lang="ru">Форма: <code>'circle'</code>, <code>'square'</code>,
-                                    <code>'rectangle'</code>, <code>'glyph'</code>, <code>'mix'</code> или их
-                                    комбинации.</span></td>
+                                    <code>'rectangle'</code>, <code>'glyph'</code>, <code>'image'</code> (1.1.0),
+                                    <code>'mix'</code> (= circle|square|rectangle), or combined with
+                                    <code>|</code>.</span><span lang="ru">Форма: <code>'circle'</code>,
+                                    <code>'square'</code>, <code>'rectangle'</code>, <code>'glyph'</code>,
+                                    <code>'image'</code> (1.1.0), <code>'mix'</code> (= circle|square|rectangle) или
+                                    их комбинации через <code>|</code>.</span></td>
                         </tr>
                         <tr>
                             <td><code>burstForms.glyph</code></td>
                             <td><span class="badge val-str">'★'</span></td>
-                            <td><span lang="en">Glyph string used when shape is <code>'glyph'</code> or
-                                    <code>'mix'</code>.</span><span lang="ru">Строка символов при shape:
-                                    <code>'glyph'</code> или <code>'mix'</code>.</span></td>
+                            <td><span lang="en">Glyph string used when shape includes <code>'glyph'</code>; each
+                                    particle picks one symbol at random.</span><span lang="ru">Строка символов, когда
+                                    в shape есть <code>'glyph'</code>; каждая частица берёт случайный
+                                    символ.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.images</code></td>
+                            <td><span class="badge val-str">[]</span></td>
+                            <td><span lang="en">1.1.0. Frames for the <code>'image'</code> shape:
+                                    <code>{ source, x, y, width, height }</code>, where <code>source</code> is an
+                                    image, canvas, or ImageBitmap. Each particle picks a random frame; repeat a frame
+                                    to raise its share. Drawn in its own colors at the glyph size
+                                    (<code>radius × 3.2</code>, min 8 px), aspect kept, normal blending; palette and
+                                    highlight do not apply. Not loaded or out-of-bounds frame falls back to a palette
+                                    circle. Kept by reference, can be passed per launch: to use part of an atlas
+                                    (e.g. only bamboo for bamboo tiles), pass that burst only its category's frames,
+                                    created once and reused (the sprite cache is keyed by frame object). The lab does
+                                    this with frame groups picked in the atlas preview.</span><span lang="ru">1.1.0.
+                                    Кадры для формы <code>'image'</code>: <code>{ source, x, y, width, height }</code>,
+                                    где <code>source</code> — картинка, canvas или ImageBitmap. Каждая частица
+                                    берёт случайный кадр; повтор кадра повышает его долю. Рисуется в своих цветах
+                                    размером глифа (<code>радиус × 3.2</code>, не меньше 8 px), с сохранением
+                                    пропорций, в обычном смешивании; палитра и блик не применяются. Незагруженный
+                                    кадр или кадр вне картинки — кружок цвета палитры. Хранится по ссылке, можно
+                                    передать в отдельном запуске: чтобы взять часть атласа (например, только бамбук
+                                    для плиток бамбука), передайте взрыву только кадры его категории, созданные
+                                    один раз и переиспользуемые (кеш спрайтов привязан к объекту кадра). В
+                                    лаборатории это делают группы кадров, выбранные в превью атласа.</span></td>
+                        </tr>
+                        <tr>
+                            <td><code>burstForms.shapeWeights</code></td>
+                            <td><span class="badge val-null">null</span></td>
+                            <td><span lang="en">1.1.0. Relative share of shapes listed in <code>shape</code>, e.g.
+                                    <code>{ image: 3, circle: 1 }</code>. Without it shapes are picked uniformly, as
+                                    before. A listed shape without a weight counts as 1; 0 excludes it; all zero
+                                    falls back to uniform.</span><span lang="ru">1.1.0. Доли форм из
+                                    <code>shape</code>, например <code>{ image: 3, circle: 1 }</code>. Без него формы
+                                    выбираются поровну, как раньше. Форма без веса считается с весом 1; 0
+                                    исключает форму; если все веса 0 — выбор поровну.</span></td>
                         </tr>
                         <tr>
                             <td><code>burstForms.colorMode</code></td>

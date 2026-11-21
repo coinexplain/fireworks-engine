@@ -169,6 +169,11 @@ export const EXAMPLES_GALLERY_SECTIONS = deepFreeze([
         title: 'Cascades',
         recipeIds: ['rocket-cascade', 'classic-cascade'],
     },
+    {
+        id: 'images-and-events',
+        title: 'Images & Burst Events',
+        recipeIds: ['image-forms', 'burst-events', 'victory-boundaries'],
+    },
 ]);
 
 export const EXAMPLES_GALLERY_RECIPES = deepFreeze([
@@ -819,6 +824,28 @@ export const EXAMPLES_GALLERY_RECIPES = deepFreeze([
             },
         ],
     },
+    // Code-only recipes: the editor code is the whole example (no launch plan).
+    {
+        id: 'image-forms',
+        sectionId: 'images-and-events',
+        title: 'Image Forms',
+        description: 'Atlas frames in their own colors, mixed with circles by shapeWeights (1.1.0). Left burst uses the whole atlas, right one only its bamboo cells — pass each burst only the frames of its category. Uses a generated demo atlas; replace it with your image.',
+        runType: 'code',
+    },
+    {
+        id: 'burst-events',
+        sectionId: 'images-and-events',
+        title: 'Burst Events',
+        description: 'onBurst (1.0.1) marks every logical burst once, including cascade children, at the moment it materializes.',
+        runType: 'code',
+    },
+    {
+        id: 'victory-boundaries',
+        sectionId: 'images-and-events',
+        title: 'Victory Boundaries',
+        description: 'trackBurstSequence (1.0.2) flags the first and last bursts of victory-finale in onBurst — for timing sounds to the visible explosions.',
+        runType: 'code',
+    },
 ]);
 
 const EXAMPLES_GALLERY_RECIPE_MAP = new Map(
@@ -831,7 +858,7 @@ export function resolveExamplesGalleryRecipe(recipeId) {
 
 export function resolveExamplesGalleryLaunchPlan(recipeId, colorModeId = 'palette') {
     const recipe = resolveExamplesGalleryRecipe(recipeId);
-    if (!recipe) {
+    if (!recipe || recipe.runType === 'code') {
         return null;
     }
 

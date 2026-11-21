@@ -143,6 +143,33 @@ export function resolveBurstFormShapeTokens(shapeValue) {
     return selectedTokens.length > 0 ? selectedTokens : [FIREWORKS_ENGINE_LAB_BURST_FORM_SHAPES[0]];
 }
 
+const MIX_SHAPE_TOKENS = Object.freeze(['circle', 'square', 'rectangle']);
+
+/** Concrete shapes the engine picks from: 'mix' expands to circle|square|rectangle. */
+export function resolveBurstFormPickedShapes(shapeValue) {
+    const picked = [];
+    resolveBurstFormShapeTokens(shapeValue).forEach((token) => {
+        const expanded = token === 'mix' ? MIX_SHAPE_TOKENS : [token];
+        expanded.forEach((shapeToken) => {
+            if (!picked.includes(shapeToken)) picked.push(shapeToken);
+        });
+    });
+    return picked;
+}
+
+/** burstForms.shapeWeights for the selected shapes, or null when weighting is off. */
+export function resolveLabShapeWeights(burstForms) {
+    if (!burstForms.shapeWeightsEnabled) {
+        return null;
+    }
+
+    const shapeWeights = {};
+    resolveBurstFormPickedShapes(burstForms.shape).forEach((shapeToken) => {
+        shapeWeights[shapeToken] = burstForms.shapeWeights?.[shapeToken] ?? 1;
+    });
+    return shapeWeights;
+}
+
 function pruneSnippetDefaults(value, defaultValue) {
     if (areValuesDeepEqual(value, defaultValue)) {
         return SNIPPET_PRUNE_OMIT;
@@ -224,6 +251,7 @@ export function buildBurstFormsOptions(burstForms) {
         highlightAngleDeg: burstForms.highlightAngleDeg,
         highlightWidth: burstForms.highlightWidth,
         wobble: burstForms.wobble,
+        shapeWeights: resolveLabShapeWeights(burstForms),
     };
 }
 
@@ -387,6 +415,9 @@ function compactBurstFormsSnippetOptions(burstFormsOptions) {
     if (!selectedShapeTokens.includes('glyph')) {
         delete compactOptions.glyph;
     }
+    if (!compactOptions.shapeWeights) {
+        delete compactOptions.shapeWeights;
+    }
 
     if (!(Number.isFinite(compactOptions.spin) && compactOptions.spin > 0)) {
         delete compactOptions.spinCoverage;
@@ -455,11 +486,81 @@ export function buildCompactEngineOptions(engineOptions) {
     return buildCompactOptions(engineOptions, ENGINE_SNIPPET_DEFAULT_OPTIONS);
 }
 
+/**
+ * Snippet lines that build image frames from an atlas grid (frames hold image references, not JSON).
+ * Grid: first cell at (offsetX, offsetY), cells repeat every cell + gap; only whole cells count.
+ * With `group` only its cells are used: cell index = row * columns + column.
+ */
+export function buildImageFramesSnippetLines(
+    cellSize,
+    optionsVariableName = 'effectOptions',
+    group = null,
+    grid = {},
+) {
+    const offsetX = grid.offsetX || 0;
+    const offsetY = grid.offsetY || 0;
+    const gapX = grid.gapX || 0;
+    const gapY = grid.gapY || 0;
+    const header = [
+        'const atlas = new Image();',
+        "atlas.src = '/path/to/atlas.webp';",
+        'await atlas.decode();',
+        `const cell = ${cellSize};`,
+        `const grid = { offsetX: ${offsetX}, offsetY: ${offsetY}, gapX: ${gapX}, gapY: ${gapY} };`,
+        'const count = (length, offset, gap) => (length - offset >= cell ? Math.floor((length - offset - cell) / (cell + gap)) + 1 : 0);',
+        'const columns = count(atlas.naturalWidth, grid.offsetX, grid.gapX);',
+        'const rows = count(atlas.naturalHeight, grid.offsetY, grid.gapY);',
+        'const frameOf = (index) => ({',
+        '    source: atlas,',
+        '    x: grid.offsetX + (index % columns) * (cell + grid.gapX),',
+        '    y: grid.offsetY + Math.floor(index / columns) * (cell + grid.gapY),',
+        '    width: cell,',
+        '    height: cell,',
+        '});',
+    ];
+
+    if (group) {
+        return [
+            `// The 'image' shape needs frames. Group "${group.name}": only these atlas cells are used.`,
+            ...header,
+            `${optionsVariableName}.burstForms.images = ${JSON.stringify(group.cells)}.map(frameOf);`,
+            '',
+        ];
+    }
+
+    return [
+        "// The 'image' shape needs frames: an image (or atlas) and rectangles inside it.",
+        ...header,
+        `${optionsVariableName}.burstForms.images = Array.from({ length: columns * rows }, (_, index) => frameOf(index));`,
+        '',
+    ];
+}
+
 export function buildSettingsSnippet(currentSettings) {
     const effectOptions = buildSnippetEffectOptions(currentSettings);
+    const usesImages = currentSettings.burstForms.enabled
+        && resolveBurstFormShapeTokens(currentSettings.burstForms.shape).includes('image');
+    if (usesImages && !isPlainObject(effectOptions.burstForms)) {
+        effectOptions.burstForms = {};
+    }
     return buildEngineBootstrapSnippet({
         effectOptions,
         bodyLines: [
+            ...(usesImages
+                ? buildImageFramesSnippetLines(
+                    currentSettings.burstForms.imageCellSize,
+                    'effectOptions',
+                    currentSettings.burstForms.imageGroups?.find(
+                        (group) => group.name === currentSettings.burstForms.imageGroup,
+                    ) ?? null,
+                    {
+                        offsetX: currentSettings.burstForms.imageGridOffsetX,
+                        offsetY: currentSettings.burstForms.imageGridOffsetY,
+                        gapX: currentSettings.burstForms.imageGridGapX,
+                        gapY: currentSettings.burstForms.imageGridGapY,
+                    },
+                )
+                : []),
             'const targetX = window.innerWidth * 0.5;',
             'const targetY = window.innerHeight * 0.5;',
             'fireworks.launchRocketAt(targetX, targetY, effectOptions);',

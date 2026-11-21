@@ -9,6 +9,152 @@ import { resolveFireworksEnginePreset } from '../src/presets.js';
 const SINGLE_RED_COLOR = '#ff3b30';
 const DEFAULT_GLYPH = '★✦';
 
+// Code-only recipes (Images & Burst Events). Editor code runs with gallery helpers:
+// engine, centerX, centerY, createFireworksEngine (engines are cleaned up on Stop),
+// createDemoAtlas, buildGridFrames, showBurstMarker.
+const CODE_RECIPE_SNIPPETS = Object.freeze({
+    'image-forms': Object.freeze({
+        editor: [
+            '// Demo atlas: 4×2 cells of 128 px. Use your own image: new Image() + decode().',
+            'const atlas = createDemoAtlas(128);',
+            'const allFrames = buildGridFrames(atlas, 128);',
+            '// Part of the atlas: only the bamboo sticks (cells 2 and 6). Reuse frame objects.',
+            'const bambooFrames = allFrames.filter((frame) => [2, 6].includes(frame.cellIndex));',
+            '',
+            'const burstForms = {',
+            "    shape: 'image|circle',",
+            '    shapeWeights: { image: 3, circle: 1 },',
+            '    count: 28,',
+            '    sizeMin: 6,',
+            '    sizeMax: 8,',
+            '    spin: 0.6,',
+            '    spinCoverage: 0.7,',
+            '    lifeMin: 1.4,',
+            '    lifeMax: 2,',
+            '};',
+            '',
+            '// Left: every frame of the atlas. Right: bamboo only.',
+            'engine.burst(centerX - stageWidth * 0.2, centerY, {',
+            '    burstForms: { ...burstForms, images: allFrames },',
+            '    burstSparks: { enabled: false },',
+            '});',
+            'engine.burst(centerX + stageWidth * 0.2, centerY, {',
+            '    burstForms: { ...burstForms, images: bambooFrames },',
+            '    burstSparks: { enabled: false },',
+            '});',
+        ],
+        portable: [
+            "import { createFireworksEngine } from 'fireworks-engine';",
+            '',
+            'const fireworks = createFireworksEngine({',
+            '    canvas: {',
+            '        appendTarget: document.body,',
+            '    },',
+            '});',
+            '',
+            '// Frames: an image (or atlas) and rectangles inside it. Kept by reference.',
+            'const atlas = new Image();',
+            "atlas.src = '/path/to/atlas.webp';",
+            'await atlas.decode();',
+            'const cell = 128;',
+            'const columns = Math.floor(atlas.naturalWidth / cell);',
+            '// Cell index = row * columns + column. Create frames once and reuse them.',
+            'const frameOf = (index) => ({',
+            '    source: atlas,',
+            '    x: (index % columns) * cell,',
+            '    y: Math.floor(index / columns) * cell,',
+            '    width: cell,',
+            '    height: cell,',
+            '});',
+            'const framesByCategory = {',
+            '    bamboo: [2, 6].map(frameOf),',
+            '};',
+            '',
+            '// Pass a burst only the frames of its category.',
+            'fireworks.burst(window.innerWidth * 0.5, window.innerHeight * 0.36, {',
+            '    burstForms: {',
+            "        shape: 'image|circle',",
+            '        shapeWeights: { image: 3, circle: 1 },',
+            '        images: framesByCategory.bamboo,',
+            '        count: 28,',
+            '        sizeMin: 6,',
+            '        sizeMax: 8,',
+            '    },',
+            '    burstSparks: { enabled: false },',
+            '});',
+        ],
+    }),
+    'burst-events': Object.freeze({
+        editor: [
+            '// onBurst is constructor-only: create an engine that owns the callback.',
+            'const events = createFireworksEngine({',
+            '    onBurst: ({ x, y }) => showBurstMarker(x, y),',
+            '});',
+            '',
+            'events.launchRocketAt(centerX, centerY, {',
+            '    rocket: {',
+            '        cascade: { mode: \'rocket\', bursts: 3, childBursts: 2, delay: 160, spreadX: 160, spreadY: 120 },',
+            '    },',
+            '});',
+        ],
+        portable: [
+            "import { createFireworksEngine } from 'fireworks-engine';",
+            '',
+            'const fireworks = createFireworksEngine({',
+            '    canvas: {',
+            '        appendTarget: document.body,',
+            '    },',
+            '    // Once per logical burst, including rocket detonations and cascade children.',
+            '    onBurst: ({ x, y }) => {',
+            '        // Trigger an already prepared effect at these canvas coordinates.',
+            '    },',
+            '});',
+            '',
+            'fireworks.launchRocketAt(window.innerWidth * 0.5, window.innerHeight * 0.36, {',
+            '    rocket: {',
+            "        cascade: { mode: 'rocket', bursts: 3, childBursts: 2, delay: 160, spreadX: 160, spreadY: 120 },",
+            '    },',
+            '});',
+        ],
+    }),
+    'victory-boundaries': Object.freeze({
+        editor: [
+            '// Tracking accepts only default engine settings and this exact launch.',
+            'const victory = createFireworksEngine({',
+            '    onBurst: ({ x, y, sequence }) => showBurstMarker(x, y, sequence),',
+            '});',
+            '',
+            "const accepted = victory.launchPresetAt('victory-finale', centerX, centerY, {",
+            '    trackBurstSequence: true,',
+            '    sizeScale: 1.05,',
+            '    timeScale: 0.95,',
+            '});',
+            "if (!accepted) throw new Error('trackBurstSequence was rejected');",
+        ],
+        portable: [
+            "import { createFireworksEngine } from 'fireworks-engine';",
+            '',
+            'const fireworks = createFireworksEngine({',
+            '    canvas: {',
+            '        appendTarget: document.body,',
+            '    },',
+            '    onBurst: ({ x, y, sequence }) => {',
+            '        // sequence exists on tracked victory bursts only.',
+            '        if (sequence?.isFirst || sequence?.isLast) {',
+            '            // Trigger a prepared sound here.',
+            '        }',
+            '    },',
+            '});',
+            '',
+            "fireworks.launchPresetAt('victory-finale', window.innerWidth * 0.5, window.innerHeight * 0.36, {",
+            '    trackBurstSequence: true,',
+            '    sizeScale: 1.05,',
+            '    timeScale: 0.95,',
+            '});',
+        ],
+    }),
+});
+
 function isPlainRecord(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
 }
@@ -1089,6 +1235,10 @@ function buildPortableSnippet(recipeId, colorModeId = 'palette') {
 }
 
 export function resolveExamplesGallerySnippet(recipeId, colorModeId = 'palette') {
+    if (CODE_RECIPE_SNIPPETS[recipeId]) {
+        return formatSnippetBlock(CODE_RECIPE_SNIPPETS[recipeId].editor);
+    }
+
     if (
         recipeId === 'full-rocket'
         || recipeId === 'direct-burst'
@@ -1107,5 +1257,8 @@ export function resolveExamplesGallerySnippet(recipeId, colorModeId = 'palette')
 }
 
 export function resolveExamplesGalleryPortableSnippet(recipeId, colorModeId = 'palette') {
+    if (CODE_RECIPE_SNIPPETS[recipeId]) {
+        return formatSnippetBlock(CODE_RECIPE_SNIPPETS[recipeId].portable);
+    }
     return buildPortableSnippet(recipeId, colorModeId);
 }

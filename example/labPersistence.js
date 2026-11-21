@@ -120,7 +120,12 @@ function createStorage(storage = undefined) {
 }
 
 export const FIREWORKS_ENGINE_LAB_BURST_SPARK_SHAPES = deepFreeze(['uniform', 'fade', 'spindle']);
-export const FIREWORKS_ENGINE_LAB_BURST_FORM_SHAPES = deepFreeze(['circle', 'square', 'rectangle', 'glyph', 'mix']);
+export const FIREWORKS_ENGINE_LAB_BURST_FORM_SHAPES = deepFreeze(['circle', 'square', 'rectangle', 'glyph', 'image', 'mix']);
+// Shapes that can carry a weight in burstForms.shapeWeights ('mix' expands to circle|square|rectangle).
+export const FIREWORKS_ENGINE_LAB_WEIGHTED_FORM_SHAPES = deepFreeze(['circle', 'square', 'rectangle', 'glyph', 'image']);
+export const FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS = deepFreeze({ min: 0, max: 10 });
+export const FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS = deepFreeze({ min: 16, max: 512 });
+export const FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS = deepFreeze({ min: 0, max: 512 });
 export const FIREWORKS_ENGINE_LAB_ROCKET_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 export const FIREWORKS_ENGINE_LAB_ROCKET_CASCADE_MODES = deepFreeze(['burst', 'rocket']);
 export const FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
@@ -151,6 +156,7 @@ export const DEFAULT_FIREWORKS_ENGINE_LAB_SECTION_STATE = deepFreeze({
     rocketTailEmbers: false,
     burstCenterFlash: false,
     burstTwinkleCloud: false,
+    burstEvents: false,
 });
 
 export const DEFAULT_FIREWORKS_ENGINE_LAB_ROCKET = deepFreeze({
@@ -202,7 +208,48 @@ export const DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS = deepFreeze({
     highlightAngleDeg: 0,
     highlightWidth: 0.18,
     wobble: 0,
+    shapeWeightsEnabled: false,
+    shapeWeights: deepFreeze({ circle: 1, square: 1, rectangle: 1, glyph: 1, image: 1 }),
+    imageCellSize: 128,
+    // Grid: first cell at (offsetX, offsetY), cells repeat every cellSize + gap.
+    imageGridOffsetX: 0,
+    imageGridOffsetY: 0,
+    imageGridGapX: 0,
+    imageGridGapY: 0,
+    // Named frame groups: { name, cells: [cellIndex] }. Empty imageGroup = all frames.
+    imageGroups: deepFreeze([]),
+    imageGroup: '',
 });
+
+export const FIREWORKS_ENGINE_LAB_IMAGE_GROUP_LIMITS = deepFreeze({
+    groups: 32,
+    nameLength: 24,
+    cellIndexMax: 4095,
+});
+
+function normalizeImageGroups(value) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    const groups = [];
+    const names = new Set();
+    for (const entry of value) {
+        if (groups.length >= FIREWORKS_ENGINE_LAB_IMAGE_GROUP_LIMITS.groups) break;
+        const name = typeof entry?.name === 'string'
+            ? entry.name.trim().slice(0, FIREWORKS_ENGINE_LAB_IMAGE_GROUP_LIMITS.nameLength)
+            : '';
+        if (!name || names.has(name)) continue;
+        const cells = Array.isArray(entry.cells)
+            ? [...new Set(entry.cells.filter((cell) => (
+                Number.isInteger(cell) && cell >= 0 && cell <= FIREWORKS_ENGINE_LAB_IMAGE_GROUP_LIMITS.cellIndexMax
+            )))].sort((left, right) => left - right)
+            : [];
+        names.add(name);
+        groups.push({ name, cells });
+    }
+    return groups;
+}
 
 export const DEFAULT_FIREWORKS_ENGINE_LAB_BURST_SPARKS = deepFreeze({
     enabled: true,
@@ -355,7 +402,11 @@ export function createDefaultFireworksEngineLabSettings() {
             ...DEFAULT_FIREWORKS_ENGINE_LAB_ROCKET,
             cascade: { ...DEFAULT_FIREWORKS_ENGINE_LAB_ROCKET.cascade },
         },
-        burstForms: { ...DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS },
+        burstForms: {
+            ...DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS,
+            shapeWeights: { ...DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS.shapeWeights },
+            imageGroups: [],
+        },
         burstSparks: { ...DEFAULT_FIREWORKS_ENGINE_LAB_BURST_SPARKS },
         rocketTailEmbers: { ...DEFAULT_FIREWORKS_ENGINE_LAB_ROCKET_TAIL_EMBERS },
         burstCenterFlash: { ...DEFAULT_FIREWORKS_ENGINE_LAB_BURST_CENTER_FLASH },
@@ -513,6 +564,38 @@ export function normalizeFireworksEngineLabSettings(input = {}) {
     normalized.burstForms.highlightAngleDeg = resolveFinite(safeBurstForms.highlightAngleDeg, normalized.burstForms.highlightAngleDeg, 0, 360);
     normalized.burstForms.highlightWidth = resolveFinite(safeBurstForms.highlightWidth, normalized.burstForms.highlightWidth, 0.01, 1);
     normalized.burstForms.wobble = resolveFinite(safeBurstForms.wobble, normalized.burstForms.wobble, 0, 1.5);
+    normalized.burstForms.shapeWeightsEnabled = resolveBoolean(
+        safeBurstForms.shapeWeightsEnabled,
+        normalized.burstForms.shapeWeightsEnabled,
+    );
+    const safeShapeWeights = resolveObject(safeBurstForms.shapeWeights);
+    FIREWORKS_ENGINE_LAB_WEIGHTED_FORM_SHAPES.forEach((shapeToken) => {
+        normalized.burstForms.shapeWeights[shapeToken] = resolveFinite(
+            safeShapeWeights[shapeToken],
+            normalized.burstForms.shapeWeights[shapeToken],
+            FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS.min,
+            FIREWORKS_ENGINE_LAB_SHAPE_WEIGHT_BOUNDS.max,
+        );
+    });
+    normalized.burstForms.imageCellSize = Math.floor(resolveFinite(
+        safeBurstForms.imageCellSize,
+        normalized.burstForms.imageCellSize,
+        FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS.min,
+        FIREWORKS_ENGINE_LAB_IMAGE_CELL_SIZE_BOUNDS.max,
+    ));
+    ['imageGridOffsetX', 'imageGridOffsetY', 'imageGridGapX', 'imageGridGapY'].forEach((key) => {
+        normalized.burstForms[key] = Math.floor(resolveFinite(
+            safeBurstForms[key],
+            normalized.burstForms[key],
+            FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS.min,
+            FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS.max,
+        ));
+    });
+    normalized.burstForms.imageGroups = normalizeImageGroups(safeBurstForms.imageGroups);
+    const requestedGroup = typeof safeBurstForms.imageGroup === 'string' ? safeBurstForms.imageGroup : '';
+    normalized.burstForms.imageGroup = normalized.burstForms.imageGroups.some((group) => group.name === requestedGroup)
+        ? requestedGroup
+        : '';
 
     normalized.burstSparks.enabled = resolveBoolean(safeBurstSparks.enabled, normalized.burstSparks.enabled);
     normalized.burstSparks.shape = resolveString(safeBurstSparks.shape, normalized.burstSparks.shape, FIREWORKS_ENGINE_LAB_BURST_SPARK_SHAPES);

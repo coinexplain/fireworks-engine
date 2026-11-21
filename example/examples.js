@@ -12,6 +12,8 @@ import {
     resolveExamplesGalleryPortableSnippet,
     resolveExamplesGallerySnippet,
 } from './examplesGallerySnippets.js';
+import { buildGridFrames, createDemoAtlas } from './labImageAtlas.js';
+import { showBurstMarker } from './burstMarkers.js';
 
 const gallery = document.getElementById('gallery');
 const status = document.getElementById('status');
@@ -36,6 +38,23 @@ function createExamplesEngine() {
 
 const engine = createExamplesEngine();
 let isolatedConfettiEngine = null;
+// Engines created by recipe code (onBurst is constructor-only); destroyed on Stop and on the next run.
+const recipeOwnedEngines = new Set();
+
+function destroyRecipeOwnedEngines() {
+    recipeOwnedEngines.forEach((ownedEngine) => ownedEngine.destroy());
+    recipeOwnedEngines.clear();
+}
+
+// Only the canvas is customized, so tracked victory launches keep default engine settings.
+function createRecipeOwnedEngine(options = {}) {
+    const ownedEngine = createFireworksEngine({
+        ...options,
+        canvas: { ...EXAMPLES_ENGINE_OPTIONS.canvas, ...options.canvas },
+    });
+    recipeOwnedEngines.add(ownedEngine);
+    return ownedEngine;
+}
 
 const singleColorModeState = new Map();
 const editorContentState = new Map();
@@ -169,6 +188,7 @@ function stopGalleryEngines() {
     clearScheduledLaunches();
     engine.stop(true);
     isolatedConfettiEngine?.stop(true);
+    destroyRecipeOwnedEngines();
     refreshFloatingMetrics();
     setStatus('Stopped and cleared the page overlay.');
 }
@@ -529,6 +549,10 @@ function buildExecutionContext() {
         stageHeight: viewport.height,
         resolveRecipeEditorTopY,
         launchAtRatio,
+        createFireworksEngine: createRecipeOwnedEngine,
+        createDemoAtlas,
+        buildGridFrames,
+        showBurstMarker,
         schedule(callback, delayMs) {
             return scheduleLaunch(callback, delayMs);
         },
@@ -555,6 +579,7 @@ async function runEditorCode(recipeId) {
     }
 
     clearScheduledLaunches();
+    destroyRecipeOwnedEngines();
     setEditorError(recipeId, '');
 
     let executionEngine = engine;

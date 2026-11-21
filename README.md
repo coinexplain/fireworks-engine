@@ -256,6 +256,44 @@ fireworks.burst(x, y, {
   `shape` but missing in `shapeWeights` counts as 1; weight 0 excludes it. If all weights
   are 0, the pick is uniform.
 
+#### Using part of an atlas per burst
+
+The engine draws only the frames it receives, so one atlas can serve several categories:
+build the frames once, then pass each burst only the cells of its category.
+
+```js
+const cell = 128;
+const columns = Math.floor(atlas.naturalWidth / cell);
+// Cell index = row * columns + column, counted over the whole grid.
+const frameOf = (index) => ({
+    source: atlas,
+    x: (index % columns) * cell,
+    y: Math.floor(index / columns) * cell,
+    width: cell,
+    height: cell,
+});
+const framesByCategory = {
+    bamboo: [2, 6].map(frameOf),
+    seasons: [12, 13, 14, 15].map(frameOf),
+};
+
+// Create frame objects once and reuse them: the sprite cache is keyed by frame object.
+fireworks.burst(x, y, {
+    burstForms: { shape: 'image', images: framesByCategory.bamboo },
+});
+```
+
+In `example/lab.html` the same is done with frame groups: load an atlas, add a group
+(for example `bamboo`), and click its cells in the atlas preview. Launches and
+**Copy snippet** then use only the active group's cells.
+
+The lab slices an atlas as a grid: the first cell starts at **Grid offset X/Y**, the
+next ones repeat every cell size + **Gap X/Y**, and only whole cells count (leftovers at
+the right and bottom are ignored). For example, 200 px frames placed in 256 px slots of a
+1024×256 atlas, centered in each slot, are cell 200, offset 28/28, gap 56/56. Atlases packed
+by a texture packer, with frames of different sizes, are not supported by the lab yet; see
+`docs/proposals/lab-atlas-frames-from-packer-json.md`.
+
 Rocket cascade example:
 
 ```js
@@ -355,7 +393,8 @@ The npm package is intentionally core-only. Browser examples live in the reposit
 
 - `example/minimal-usage.html` for the smallest browser integration.
 - `example/examples.html` for an interactive examples gallery.
-- `example/lab.html` for full effect tuning.
+- `example/lab.html` for full effect tuning, including image atlases with frame groups,
+  shape weights, and an `onBurst` log with tracked victory boundaries.
 - `example/fireworks-engine-options-reference.html` for a generated options reference page.
 - `example/scratch.html` for running standalone snippets.
 
