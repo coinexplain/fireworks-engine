@@ -251,6 +251,9 @@ export function buildBurstFormsOptions(burstForms) {
         highlightAngleDeg: burstForms.highlightAngleDeg,
         highlightWidth: burstForms.highlightWidth,
         wobble: burstForms.wobble,
+        shrinkStart: burstForms.shrinkStart,
+        shrinkTo: burstForms.shrinkTo,
+        shrinkEasing: burstForms.shrinkEasing,
         shapeWeights: resolveLabShapeWeights(burstForms),
     };
 }

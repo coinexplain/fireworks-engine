@@ -213,6 +213,9 @@ fireworks.burst(x, y, {
         highlight: 0.25,
         highlightWidth: 0.2,
         wobble: 0.4,
+        shrinkStart: 0.6,
+        shrinkTo: 0.2,
+        shrinkEasing: 'easeIn',
     },
     burstSparks: {
         shape: 'fade',
@@ -221,6 +224,20 @@ fireworks.burst(x, y, {
     },
 });
 ```
+
+### Shrinking while fading
+
+Form particles fade out over their whole life. Since 1.2.0 they can also shrink at the end of it:
+
+- `shrinkStart` — share of lifetime (0–1) after which shrinking starts. `0.6` keeps full size for the
+  first 60% of life. Default `1`: never shrink.
+- `shrinkTo` — size at the end of life, as a share of the original (0–1). `0.2` ends at 20%, `0` shrinks
+  to nothing. Default `1`: no shrinking.
+- `shrinkEasing` — `'linear'` (default), `'easeIn'` (slow, then fast), `'easeOut'` (fast, then slow) or
+  `'easeInOut'`.
+
+Works for every form shape, including glyphs and images. Values are read at spawn, like other form
+settings, and are clamped to 0–1; an unknown easing falls back to `'linear'`.
 
 ### Image forms and shape weights
 

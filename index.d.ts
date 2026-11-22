@@ -19,6 +19,7 @@ export type BurstFlashColorMode = 'palette' | 'rgb' | 'single';
 export type BurstFormPrimitiveShape = 'circle' | 'square' | 'rectangle' | 'glyph' | 'image';
 export type BurstFormShape = BurstFormPrimitiveShape | 'mix';
 export type BurstFormShapeInput = BurstFormShape | `${BurstFormShape}|${string}`;
+export type BurstFormShrinkEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
 /** Image source accepted by `CanvasRenderingContext2D.drawImage`. */
 export type BurstFormImageSource = HTMLImageElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas;
 /** One frame of an image (or atlas) for the `image` form shape. Kept by reference, never cloned. */
@@ -136,6 +137,12 @@ export interface FireworksBurstFormsOptions {
     highlightAngleDeg?: number;
     highlightWidth?: number;
     wobble?: number;
+    /** Share of lifetime (0–1) after which the particle starts shrinking. Default 1 (never). */
+    shrinkStart?: number;
+    /** Size (0–1 of the original) at the end of life. Default 1 (no shrinking). */
+    shrinkTo?: number;
+    /** Shrink curve. Default 'linear'. */
+    shrinkEasing?: BurstFormShrinkEasing;
     shape?: BurstFormShapeInput;
     glyph?: string;
     /** Frames for the `image` shape; each particle picks one at random. Repeat a frame to raise its share. */
@@ -291,6 +298,9 @@ export interface ResolvedBurstFormsConfig {
     highlightAngleDeg: number;
     highlightWidth: number;
     wobble: number;
+    shrinkStart: number;
+    shrinkTo: number;
+    shrinkEasing: BurstFormShrinkEasing;
     palette: string[] | readonly string[];
     simple?: boolean;
     shape: BurstFormShapeInput;

@@ -37,6 +37,11 @@ export const DEFAULT_BURST_FORMS_HIGHLIGHT = 0;
 export const DEFAULT_BURST_FORMS_HIGHLIGHT_ANGLE_DEG = 0;
 export const DEFAULT_BURST_FORMS_HIGHLIGHT_WIDTH = 0.18;
 export const DEFAULT_BURST_FORMS_WOBBLE = 0;
+// Shrink while dying: share of lifetime when shrinking starts, and size at the end of life.
+// Defaults keep particles at full size.
+export const DEFAULT_BURST_FORMS_SHRINK_START = 1;
+export const DEFAULT_BURST_FORMS_SHRINK_TO = 1;
+export const DEFAULT_BURST_FORMS_SHRINK_EASING = 'linear';
 export const DEFAULT_BURST_FORMS_SHAPE = 'circle';
 export const DEFAULT_BURST_FORMS_GLYPH = '★';
 

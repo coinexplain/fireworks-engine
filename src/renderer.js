@@ -897,9 +897,40 @@ function isImageFormParticle(particle) {
     return particle.type === 'form' && particle.formShape === 'image';
 }
 
+function applyShrinkEasing(t, easing) {
+    if (easing === 'easeIn') return t * t;
+    if (easing === 'easeOut') return 1 - ((1 - t) * (1 - t));
+    if (easing === 'easeInOut') return t < 0.5 ? 2 * t * t : 1 - (2 * (1 - t) * (1 - t));
+    return t;
+}
+
+/**
+ * Size multiplier of a dying form particle: 1 until shrinkStart (share of lifetime elapsed),
+ * then eased down to shrinkTo at the end of life.
+ */
+export function resolveFormShrinkScale(particle) {
+    const shrinkTo = particle.formShrinkTo ?? 1;
+    const shrinkStart = particle.formShrinkStart ?? 1;
+    if (!(shrinkTo < 1) || !(shrinkStart < 1) || !(particle.maxLife > 0)) {
+        return 1;
+    }
+
+    const progress = clamp(1 - (particle.life / particle.maxLife), 0, 1);
+    if (progress <= shrinkStart) {
+        return 1;
+    }
+
+    const t = clamp((progress - shrinkStart) / (1 - shrinkStart), 0, 1);
+    return 1 - ((1 - shrinkTo) * applyShrinkEasing(t, particle.formShrinkEasing));
+}
+
 function drawFormParticle(engine, particle) {
     const ctx = engine.ctx;
     const alpha = particle.life / particle.maxLife;
+    const shrinkScale = resolveFormShrinkScale(particle);
+    if (shrinkScale <= 0) {
+        return;
+    }
     const shape = resolveRenderableFormShape(particle.formShape ?? engine.burstForms.shape);
     const spinStrength = particle.formSpin ?? 0;
     const spinBlend = particle.formSpinBlend ?? (spinStrength > 0 ? 1 : 0);
@@ -907,16 +938,18 @@ function drawFormParticle(engine, particle) {
     // Images keep their own colors: no palette highlight.
     const renderColor = shape === 'image' ? particle.color : resolveFormParticleRenderColor(particle);
     setContextGlobalAlpha(ctx, alpha);
-    if (hasSpinTransform) {
-        const rawWidthScale = particle.formWidthScale ?? 1;
+    // Shrinking scales the canvas, so cached glyph/image sprites keep their size keys.
+    if (hasSpinTransform || shrinkScale < 1) {
+        const rawWidthScale = hasSpinTransform ? (particle.formWidthScale ?? 1) : 1;
         const widthScale = Math.max(
             FORM_SPIN_RENDER_TUNING.minWidthScale,
             1 + ((rawWidthScale - 1) * spinBlend),
         );
+        const spinAngle = hasSpinTransform ? (particle.formSpinAngle ?? 0) : 0;
         if (setBaseCanvasTransform(ctx, engine)) {
             ctx.translate(particle.x, particle.y);
-            ctx.rotate(particle.formSpinAngle ?? 0);
-            ctx.scale(widthScale, 1);
+            ctx.rotate(spinAngle);
+            ctx.scale(widthScale * shrinkScale, shrinkScale);
             drawFormParticleBody(engine, particle, shape, 0, 0, renderColor);
             setBaseCanvasTransform(ctx, engine);
             return;
@@ -924,8 +957,8 @@ function drawFormParticle(engine, particle) {
 
         ctx.save?.();
         ctx.translate(particle.x, particle.y);
-        ctx.rotate(particle.formSpinAngle ?? 0);
-        ctx.scale(widthScale, 1);
+        ctx.rotate(spinAngle);
+        ctx.scale(widthScale * shrinkScale, shrinkScale);
         drawFormParticleBody(engine, particle, shape, 0, 0, renderColor);
         ctx.restore?.();
         invalidateContextStateCache();
