@@ -149,7 +149,7 @@ export interface FireworksBurstFormsOptions {
     /** Flat turn speed range in degrees per second, random direction. Default 0 (no turning). */
     rotationSpeedMin?: number;
     rotationSpeedMax?: number;
-    /** 'progressive' scales flip depth and smoothness with spin; default 'classic'. */
+    /** 'progressive': random start 3D orientation kept through pauses, turn speed grows with spin. Default 'classic'. */
     spinProfile?: BurstFormSpinProfile;
     shape?: BurstFormShapeInput;
     glyph?: string;
