@@ -429,7 +429,9 @@ The npm package is intentionally core-only. Browser examples live in the reposit
 - `example/minimal-usage.html` for the smallest browser integration.
 - `example/examples.html` for an interactive examples gallery.
 - `example/lab.html` for full effect tuning, including image atlases with frame groups,
-  shape weights, and an `onBurst` log with tracked victory boundaries.
+  shape weights, and an `onBurst` log with tracked victory boundaries. **Copy snippet** keeps only
+  values that differ from the engine defaults; **Copy full snippet** keeps every value, for merging
+  over base options other than the engine defaults (for example, your app's own effect settings).
 - `example/fireworks-engine-options-reference.html` for a generated options reference page.
 - `example/scratch.html` for running standalone snippets.
 

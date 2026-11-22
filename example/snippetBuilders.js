@@ -466,7 +466,14 @@ function compactBurstCenterFlashSnippetOptions(burstCenterFlashOptions) {
     return compactOptions;
 }
 
-export function buildSnippetEffectOptions(currentSettings) {
+/**
+ * Effect options for the snippet. By default values equal to the engine defaults are dropped.
+ * `full: true` keeps every value, so the snippet fully defines the effect even when it is merged
+ * over options other than the engine defaults (e.g. an app's own base settings).
+ * Settings that have no effect in the current mode (singleColor outside 'single', spin details
+ * without spin) are dropped in both modes.
+ */
+export function buildSnippetEffectOptions(currentSettings, { full = false } = {}) {
     const rocketOptions = buildRocketOptions(currentSettings.rocket);
     const rocketTailEmbersOptions = buildRocketTailEmbersOptions(currentSettings.rocketTailEmbers);
     const burstFormsOptions = buildBurstFormsOptions(currentSettings.burstForms);
@@ -485,6 +492,10 @@ export function buildSnippetEffectOptions(currentSettings) {
         burstCenterFlash: compactBurstCenterFlashSnippetOptions(burstCenterFlashOptions),
         burstTwinkleCloud: burstTwinkleCloudOptions.enabled ? burstTwinkleCloudOptions : { enabled: false },
     };
+
+    if (full) {
+        return compactOptions;
+    }
 
     const prunedOptions = pruneSnippetDefaults(compactOptions, SNIPPET_DEFAULT_OPTIONS);
     return isPlainObject(prunedOptions) ? prunedOptions : {};
@@ -544,8 +555,8 @@ export function buildImageFramesSnippetLines(
     ];
 }
 
-export function buildSettingsSnippet(currentSettings) {
-    const effectOptions = buildSnippetEffectOptions(currentSettings);
+export function buildSettingsSnippet(currentSettings, { full = false } = {}) {
+    const effectOptions = buildSnippetEffectOptions(currentSettings, { full });
     const usesImages = currentSettings.burstForms.enabled
         && resolveBurstFormShapeTokens(currentSettings.burstForms.shape).includes('image');
     if (usesImages && !isPlainObject(effectOptions.burstForms)) {
