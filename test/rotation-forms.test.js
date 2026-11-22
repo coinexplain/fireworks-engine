@@ -94,27 +94,60 @@ test('rotation: invalid values are clamped', () => {
     });
 });
 
-test('progressive spin: small spin barely flattens and starts fully open', () => {
+function widthsAfter(spin, frames) {
+    let result;
     seeded(() => {
-        const f = setup({ spin: 0.05, spinProfile: 'progressive', spinCoverage: 1 });
+        const f = setup({ spin, spinProfile: 'progressive', spinCoverage: 1, spinDuration: 8, spinPause: 0.05 });
         f.engine.burst(100, 80);
-        for (const particle of forms(f)) {
-            assert.ok(particle.formSpinMinWidthScale >= 0.95, `min width ${particle.formSpinMinWidthScale}`);
-            assert.ok(Math.abs(Math.sin(particle.formSpinPhase)) > 0.99);
-            assert.ok(particle.formSpinBlendResponseScale < 1);
-        }
+        const particles = forms(f);
+        const start = particles.map((particle) => particle.formWidthScale);
+        for (let frame = 0; frame < frames; frame += 1) f.step(16);
+        result = { start, end: particles.map((particle) => particle.formWidthScale), particles };
         f.engine.destroy();
     });
+    return result;
+}
+
+test('progressive spin: particles start at a random 3D orientation, not fully open', () => {
+    const { start, particles } = widthsAfter(0.05, 0);
+    assert.ok(start.some((width) => width < 0.5), 'some particles start edge-on');
+    assert.ok(start.some((width) => width > 0.9), 'some particles start face-on');
+    for (const particle of particles) {
+        assert.equal(particle.formSpinBlend, 1);
+        assert.ok(particle.formSpinMinWidthScale <= 0.12 + 1e-9, 'full flip depth');
+    }
 });
 
-test('progressive spin: spin 1 keeps the classic flip depth and blend speed', () => {
+test('progressive spin: small spin turns slowly, large spin fast', () => {
+    const change = (spin) => {
+        const { start, end } = widthsAfter(spin, 20);
+        return start.reduce((sum, width, index) => sum + Math.abs(end[index] - width), 0) / start.length;
+    };
+    const slow = change(0.05);
+    const fast = change(1);
+    assert.ok(slow < 0.05, `small spin changes width by ${slow}`);
+    assert.ok(fast > slow * 5, `large spin ${fast} vs small ${slow}`);
+});
+
+test('progressive spin: a pause eases the turn speed and keeps the orientation', () => {
     seeded(() => {
-        const f = setup({ spin: 1, spinProfile: 'progressive' });
+        const f = setup({ spin: 1, spinProfile: 'progressive', spinCoverage: 1, count: 1 });
         f.engine.burst(100, 80);
-        for (const particle of forms(f)) {
-            assert.ok(particle.formSpinMinWidthScale <= 0.12 + 1e-9);
-            assert.equal(particle.formSpinBlendResponseScale, 1);
-        }
+        const [particle] = forms(f);
+        particle.formSpinActive = true;
+        particle.formSpinRate = 1;
+        particle.formSpinToggleTimer = 10;
+        f.step(16);
+        particle.formSpinActive = false;
+        particle.formSpinToggleTimer = 10;
+        f.step(16);
+        assert.ok(particle.formSpinRate > 0.5 && particle.formSpinRate < 1, `rate eases: ${particle.formSpinRate}`);
+        for (let frame = 0; frame < 150; frame += 1) f.step(16);
+        assert.equal(particle.formSpinRate, 0);
+        const width = particle.formWidthScale;
+        f.step(16);
+        assert.equal(particle.formWidthScale, width, 'width stays while paused');
+        assert.equal(particle.formSpinBlend, 1, 'never snaps back open');
         f.engine.destroy();
     });
 });
@@ -125,13 +158,14 @@ test('classic spin is unchanged by default and for unknown profiles', () => {
         seeded(() => {
             const f = setup({ spin: 0.05, ...(spinProfile ? { spinProfile } : {}) });
             f.engine.burst(100, 80);
-            result = forms(f).map((p) => [p.formSpinMinWidthScale, p.formSpinPhase, p.formSpinBlendResponseScale]);
+            for (let frame = 0; frame < 10; frame += 1) f.step(16);
+            result = forms(f).map((p) => [p.formSpinMinWidthScale, p.formSpinPhase, p.formWidthScale, p.formSpinBlend]);
+            for (const particle of forms(f)) assert.equal(particle.formSpinProgressive, false);
             f.engine.destroy();
         });
         return result;
     };
     const classic = snapshot(undefined);
     assert.deepEqual(snapshot('bogus'), classic);
-    assert.ok(classic.some(([minWidth]) => minWidth < 0.2), 'classic flattens even at small spin');
-    for (const [, , blendScale] of classic) assert.equal(blendScale, 1);
+    assert.deepEqual(snapshot('classic'), classic);
 });

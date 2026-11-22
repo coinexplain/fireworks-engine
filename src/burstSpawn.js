@@ -78,10 +78,18 @@ const FORM_SPIN_ACTIVITY_TUNING = {
     minWindow: 0.05,
 };
 
+/** Width of a flipping particle for its current flip phase (minWidth at edge-on, 1 face-on). */
+export function resolveFormFlipWidthScale(particle) {
+    const flipWave = Math.abs(Math.sin(particle.formSpinPhase ?? 0));
+    const shapedFlipWave = Math.pow(flipWave, particle.formSpinFlipExponent ?? 1);
+    const minWidth = particle.formSpinMinWidthScale ?? 1;
+    return minWidth + ((1 - minWidth) * shapedFlipWave);
+}
+
 const FORM_ROTATION_TUNING = {
     degToRad: Math.PI / 180,
-    // Slowest on/off blend for progressive spin at tiny spin values (share of the classic speed).
-    progressiveMinBlendScale: 0.15,
+    // Slowest speed easing for progressive spin at tiny spin values (share of the classic response).
+    progressiveMinRateResponse: 0.15,
 };
 
 const FORM_WOBBLE_TUNING = {
@@ -545,16 +553,22 @@ function spawnFormParticles(engine, request, startIndex, count) {
                 * FORM_ROTATION_TUNING.degToRad
                 * (Math.random() < 0.5 ? -1 : 1)
             : 0;
-        // Progressive spin: flip depth and toggle smoothness grow with spin (1 = classic depth),
-        // and particles start fully open instead of at a random flattened phase.
-        const spinDepth = isProgressiveSpin ? clamp(rawSpinStrength, 0, 1) : 1;
-        particle.formSpinBlendResponseScale = isProgressiveSpin
-            ? Math.max(FORM_ROTATION_TUNING.progressiveMinBlendScale, spinDepth)
-            : 1;
-        if (isProgressiveSpin && spinStrength > 0) {
-            particle.formSpinMinWidthScale = 1 - ((1 - particle.formSpinMinWidthScale) * spinDepth);
-            particle.formSpinPhase = (Math.PI / 2)
-                + (randomRange(-Math.PI / 2, Math.PI / 2) * spinDepth);
+        // Progressive spin: the particle starts at a random 3D orientation (random flip phase,
+        // full flip depth) and keeps it; spin only sets how fast it turns. Pauses ease the turn
+        // speed down and up instead of snapping the particle back open, and the easing is slower
+        // for small spin values.
+        particle.formSpinProgressive = isProgressiveSpin && spinStrength > 0;
+        if (particle.formSpinProgressive) {
+            particle.formSpinBlend = 1;
+            particle.formSpinRate = spinInitiallyActive ? 1 : 0;
+            particle.formSpinRateResponseScale = Math.max(
+                FORM_ROTATION_TUNING.progressiveMinRateResponse,
+                clamp(rawSpinStrength, 0, 1),
+            );
+            particle.formWidthScale = resolveFormFlipWidthScale(particle);
+        } else {
+            particle.formSpinRate = 0;
+            particle.formSpinRateResponseScale = 1;
         }
         particle.formWobble = wobbleStrength;
         particle.formWobbleLateralSpeed = wobbleStrength > 0

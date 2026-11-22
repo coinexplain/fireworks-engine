@@ -2,7 +2,7 @@ import {
     scheduleCascadeBursts,
     spawnRocketTailEmbers,
 } from './rocketLaunch.js';
-import { launchBurst } from './burstSpawn.js';
+import { launchBurst, resolveFormFlipWidthScale } from './burstSpawn.js';
 
 const MIN_DISTANCE_SQUARED_EPSILON = 0.0001;
 
@@ -140,6 +140,46 @@ export function updateRockets(engine, dt) {
     rockets.length = writeIndex;
 }
 
+function resolveSpinStep(particle, dt) {
+    const velocityFactor = Math.min(
+        FORM_SPIN_UPDATE_TUNING.maxVelocityFactor,
+        1 + (Math.abs(particle.vy) * FORM_SPIN_UPDATE_TUNING.velocitySpinScale),
+    );
+    particle.formSpinRateWavePhase += particle.formSpinRateWaveSpeed * dt;
+    const rawRateWaveFactor = 1
+        + (Math.sin(particle.formSpinRateWavePhase) * particle.formSpinRateWaveAmplitude);
+    const rateWaveFactor = Math.min(
+        FORM_SPIN_UPDATE_TUNING.rateWaveFactorMax,
+        Math.max(FORM_SPIN_UPDATE_TUNING.rateWaveFactorMin, rawRateWaveFactor),
+    );
+    return velocityFactor * rateWaveFactor * dt;
+}
+
+/**
+ * Progressive spin keeps the current 3D orientation through pauses: the turn speed eases to 0 and
+ * back (slower for small spin), and the width always follows the flip phase.
+ */
+function updateProgressiveSpin(particle, spinIsActive, dt) {
+    const rateTarget = spinIsActive ? 1 : 0;
+    const rateResponse = Math.min(
+        1,
+        FORM_SPIN_UPDATE_TUNING.blendResponse * (particle.formSpinRateResponseScale ?? 1) * dt,
+    );
+    particle.formSpinRate += (rateTarget - particle.formSpinRate) * rateResponse;
+    particle.formSpinBlend = 1;
+    if (spinIsActive) {
+        particle.formSpinBudget = Math.max(0, particle.formSpinBudget - dt);
+    }
+    if (particle.formSpinRate <= 0.001) {
+        particle.formSpinRate = 0;
+        return;
+    }
+    const spinStep = resolveSpinStep(particle, dt) * particle.formSpinRate;
+    particle.formSpinPhase += particle.formSpinPhaseSpeed * spinStep;
+    particle.formSpinAngle += particle.formSpinAngleSpeed * spinStep;
+    particle.formWidthScale = resolveFormFlipWidthScale(particle);
+}
+
 export function updateParticles(engine, dt) {
     const particles = engine.particles;
     let writeIndex = 0;
@@ -223,11 +263,11 @@ export function updateParticles(engine, dt) {
             }
 
             const spinIsActive = particle.formSpinActive && particle.formSpinBudget > 0;
+            if (particle.formSpinProgressive) {
+                updateProgressiveSpin(particle, spinIsActive, dt);
+            } else {
             const blendTarget = spinIsActive ? 1 : 0;
-            const blendResponse = Math.min(
-                1,
-                FORM_SPIN_UPDATE_TUNING.blendResponse * (particle.formSpinBlendResponseScale ?? 1) * dt,
-            );
+            const blendResponse = Math.min(1, FORM_SPIN_UPDATE_TUNING.blendResponse * dt);
             particle.formSpinBlend += (blendTarget - particle.formSpinBlend) * blendResponse;
 
             if (spinIsActive) {
@@ -253,6 +293,7 @@ export function updateParticles(engine, dt) {
             } else if (particle.formSpinBlend <= 0.001) {
                 particle.formSpinBlend = 0;
                 particle.formWidthScale = 1;
+            }
             }
         }
 

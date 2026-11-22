@@ -252,10 +252,14 @@ Since 1.3.0 form particles can be rotated in the screen plane without the 3D fli
   picks a speed and a random direction. Default `0`: the start angle stays.
 
 `spin` imitates a flipping coin: the particle turns in the plane and periodically flattens to 2–12%
-of its width. In the default `spinProfile: 'classic'` the flip depth does not depend on `spin`, so
-even small values flatten particles and toggle sharply. With `spinProfile: 'progressive'` flip depth
-and on/off smoothness grow with `spin` (full classic depth at `spin: 1`), and particles start fully
-open: small values give a gentle sway, large ones a sharp flip. Flat rotation adds to either profile.
+of its width. In the default `spinProfile: 'classic'` a particle snaps back fully open during spin
+pauses and flattens again when spinning resumes, so even small values look jerky.
+
+With `spinProfile: 'progressive'` each particle starts at a random 3D orientation (any flip phase)
+and keeps it: `spin` only sets how fast it turns, so small values give a slow, smooth tumble and large
+ones a fast flip. Pauses (`spinCoverage`, `spinDuration`, `spinPause`) ease the turn speed down and
+back up instead of snapping the particle open, and the easing is slower for small `spin`. Flat
+rotation adds to either profile.
 
 ### Image forms and shape weights
 
