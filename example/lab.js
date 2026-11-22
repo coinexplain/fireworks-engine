@@ -16,6 +16,7 @@ import {
     FIREWORKS_ENGINE_LAB_BURST_CENTER_FLASH_BOUNDS,
     FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES,
     FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS,
+    FIREWORKS_ENGINE_LAB_BURST_FORM_SPIN_PROFILES,
     FIREWORKS_ENGINE_LAB_BURST_FORM_SHAPES,
     FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS,
     FIREWORKS_ENGINE_LAB_BURST_SPARK_COLOR_MODES,
@@ -144,6 +145,9 @@ const BURST_FORM_TUNING_CONTROLS = Object.freeze([
     { id: 'wobble', label: 'Wobble', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.wobble.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.wobble.max, step: 0.01 },
     { id: 'shrinkStart', label: 'Shrink start (share of life)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkStart.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkStart.max, step: 0.01 },
     { id: 'shrinkTo', label: 'Shrink to (size at end)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkTo.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkTo.max, step: 0.01 },
+    { id: 'rotationDeg', label: 'Rotation spread (deg)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationDeg.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationDeg.max, step: 1 },
+    { id: 'rotationSpeedMin', label: 'Rotation speed min (deg/s)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationSpeedMin.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationSpeedMin.max, step: 1 },
+    { id: 'rotationSpeedMax', label: 'Rotation speed max (deg/s)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationSpeedMax.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.rotationSpeedMax.max, step: 1 },
 ]);
 
 const BURST_SPARK_TUNING_CONTROLS = Object.freeze([
@@ -965,6 +969,11 @@ function renderBurstFormsSection() {
                     <div class="styleControlGroup">${renderStyleChips('burst-form-shrink-easing', FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS.map((id) => ({ id, label: id })), settings.burstForms.shrinkEasing, 'burst-forms-shrink-easing')}</div>
                 </div>
 
+                <div class="styleControlRow">
+                    ${renderSettingLabel('Spin profile', 'spinProfile', 'burstForms.spinProfile')}
+                    <div class="styleControlGroup">${renderStyleChips('burst-form-spin-profile', FIREWORKS_ENGINE_LAB_BURST_FORM_SPIN_PROFILES.map((id) => ({ id, label: id })), settings.burstForms.spinProfile, 'burst-forms-spin-profile')}</div>
+                </div>
+
                 ${settings.burstForms.colorMode === 'single' ? `
                     <label class="colorField ${settings.burstForms.enabled ? '' : 'colorFieldMuted'}">
                         <div class="tuningMeta">
@@ -1582,6 +1591,11 @@ app.addEventListener('change', (event) => {
 
     if (action === 'burst-forms-shrink-easing') {
         updateSetting('burstForms.shrinkEasing', target.value);
+        return;
+    }
+
+    if (action === 'burst-forms-spin-profile') {
+        updateSetting('burstForms.spinProfile', target.value);
         return;
     }
 

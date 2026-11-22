@@ -20,6 +20,7 @@ export type BurstFormPrimitiveShape = 'circle' | 'square' | 'rectangle' | 'glyph
 export type BurstFormShape = BurstFormPrimitiveShape | 'mix';
 export type BurstFormShapeInput = BurstFormShape | `${BurstFormShape}|${string}`;
 export type BurstFormShrinkEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+export type BurstFormSpinProfile = 'classic' | 'progressive';
 /** Image source accepted by `CanvasRenderingContext2D.drawImage`. */
 export type BurstFormImageSource = HTMLImageElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas;
 /** One frame of an image (or atlas) for the `image` form shape. Kept by reference, never cloned. */
@@ -143,6 +144,13 @@ export interface FireworksBurstFormsOptions {
     shrinkTo?: number;
     /** Shrink curve. Default 'linear'. */
     shrinkEasing?: BurstFormShrinkEasing;
+    /** Spread of the start angle in degrees (0–360), flat rotation independent of spin. Default 0. */
+    rotationDeg?: number;
+    /** Flat turn speed range in degrees per second, random direction. Default 0 (no turning). */
+    rotationSpeedMin?: number;
+    rotationSpeedMax?: number;
+    /** 'progressive' scales flip depth and smoothness with spin; default 'classic'. */
+    spinProfile?: BurstFormSpinProfile;
     shape?: BurstFormShapeInput;
     glyph?: string;
     /** Frames for the `image` shape; each particle picks one at random. Repeat a frame to raise its share. */
@@ -301,6 +309,10 @@ export interface ResolvedBurstFormsConfig {
     shrinkStart: number;
     shrinkTo: number;
     shrinkEasing: BurstFormShrinkEasing;
+    rotationDeg: number;
+    rotationSpeedMin: number;
+    rotationSpeedMax: number;
+    spinProfile: BurstFormSpinProfile;
     palette: string[] | readonly string[];
     simple?: boolean;
     shape: BurstFormShapeInput;

@@ -22,6 +22,7 @@ import {
     normalizeGroupedPublicOptions,
     resolveBurstFormShapeSet,
     resolveBurstFormShrinkEasing,
+    resolveBurstFormSpinProfile,
     resolveBurstFlashColorMode,
 } from './valueNormalizers.js';
 import {
@@ -75,6 +76,12 @@ const FORM_SPIN_ACTIVITY_TUNING = {
     pauseMinFactor: 0.28,
     pauseMaxFactor: 1.9,
     minWindow: 0.05,
+};
+
+const FORM_ROTATION_TUNING = {
+    degToRad: Math.PI / 180,
+    // Slowest on/off blend for progressive spin at tiny spin values (share of the classic speed).
+    progressiveMinBlendScale: 0.15,
 };
 
 const FORM_WOBBLE_TUNING = {
@@ -349,6 +356,10 @@ function spawnFormParticles(engine, request, startIndex, count) {
         shrinkStart,
         shrinkTo,
         shrinkEasing,
+        rotationDeg,
+        rotationSpeedMin,
+        rotationSpeedMax,
+        spinProfile,
         directionDeg,
         coneDeg,
         palette,
@@ -372,6 +383,14 @@ function spawnFormParticles(engine, request, startIndex, count) {
     const formShrinkStart = clamp(Number.isFinite(shrinkStart) ? shrinkStart : 1, 0, 1);
     const formShrinkTo = clamp(Number.isFinite(shrinkTo) ? shrinkTo : 1, 0, 1);
     const formShrinkEasing = resolveBurstFormShrinkEasing(shrinkEasing);
+    const rotationSpreadRad = clamp(Number.isFinite(rotationDeg) ? rotationDeg : 0, 0, 360)
+        * FORM_ROTATION_TUNING.degToRad;
+    const rotationSpeedLow = Math.max(0, Number.isFinite(rotationSpeedMin) ? rotationSpeedMin : 0);
+    const rotationSpeedHigh = Math.max(
+        rotationSpeedLow,
+        Number.isFinite(rotationSpeedMax) ? rotationSpeedMax : rotationSpeedLow,
+    );
+    const isProgressiveSpin = resolveBurstFormSpinProfile(spinProfile) === 'progressive';
 
     for (let index = startIndex; index < startIndex + count; index += 1) {
         const angle = resolveDirectedBurstAngle(
@@ -518,6 +537,25 @@ function spawnFormParticles(engine, request, startIndex, count) {
         particle.formShrinkStart = formShrinkStart;
         particle.formShrinkTo = formShrinkTo;
         particle.formShrinkEasing = formShrinkEasing;
+        particle.formRotation = rotationSpreadRad > 0
+            ? randomRange(-rotationSpreadRad / 2, rotationSpreadRad / 2)
+            : 0;
+        particle.formRotationSpeed = rotationSpeedHigh > 0
+            ? randomRange(rotationSpeedLow, rotationSpeedHigh)
+                * FORM_ROTATION_TUNING.degToRad
+                * (Math.random() < 0.5 ? -1 : 1)
+            : 0;
+        // Progressive spin: flip depth and toggle smoothness grow with spin (1 = classic depth),
+        // and particles start fully open instead of at a random flattened phase.
+        const spinDepth = isProgressiveSpin ? clamp(rawSpinStrength, 0, 1) : 1;
+        particle.formSpinBlendResponseScale = isProgressiveSpin
+            ? Math.max(FORM_ROTATION_TUNING.progressiveMinBlendScale, spinDepth)
+            : 1;
+        if (isProgressiveSpin && spinStrength > 0) {
+            particle.formSpinMinWidthScale = 1 - ((1 - particle.formSpinMinWidthScale) * spinDepth);
+            particle.formSpinPhase = (Math.PI / 2)
+                + (randomRange(-Math.PI / 2, Math.PI / 2) * spinDepth);
+        }
         particle.formWobble = wobbleStrength;
         particle.formWobbleLateralSpeed = wobbleStrength > 0
             ? randomRange(FORM_WOBBLE_TUNING.lateralSpeedMin, FORM_WOBBLE_TUNING.lateralSpeedMax) * wobbleStrength

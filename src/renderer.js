@@ -939,13 +939,15 @@ function drawFormParticle(engine, particle) {
     const renderColor = shape === 'image' ? particle.color : resolveFormParticleRenderColor(particle);
     setContextGlobalAlpha(ctx, alpha);
     // Shrinking scales the canvas, so cached glyph/image sprites keep their size keys.
-    if (hasSpinTransform || shrinkScale < 1) {
+    // Flat rotation (rotationDeg/rotationSpeed*) applies with or without spin.
+    const flatRotation = particle.formRotation ?? 0;
+    if (hasSpinTransform || shrinkScale < 1 || flatRotation !== 0) {
         const rawWidthScale = hasSpinTransform ? (particle.formWidthScale ?? 1) : 1;
         const widthScale = Math.max(
             FORM_SPIN_RENDER_TUNING.minWidthScale,
             1 + ((rawWidthScale - 1) * spinBlend),
         );
-        const spinAngle = hasSpinTransform ? (particle.formSpinAngle ?? 0) : 0;
+        const spinAngle = flatRotation + (hasSpinTransform ? (particle.formSpinAngle ?? 0) : 0);
         if (setBaseCanvasTransform(ctx, engine)) {
             ctx.translate(particle.x, particle.y);
             ctx.rotate(spinAngle);

@@ -101,6 +101,13 @@ function resolveBurstFormShapeTokenSet(shape) {
 
 export const BURST_FORM_SHRINK_EASINGS = Object.freeze(['linear', 'easeIn', 'easeOut', 'easeInOut']);
 
+export const BURST_FORM_SPIN_PROFILES = Object.freeze(['classic', 'progressive']);
+
+/** Unknown or missing spin profile falls back to 'classic'. */
+export function resolveBurstFormSpinProfile(value) {
+    return BURST_FORM_SPIN_PROFILES.includes(value) ? value : 'classic';
+}
+
 /** Unknown or missing shrink easing falls back to 'linear'. */
 export function resolveBurstFormShrinkEasing(value) {
     return BURST_FORM_SHRINK_EASINGS.includes(value) ? value : 'linear';

@@ -42,6 +42,12 @@ export const DEFAULT_BURST_FORMS_WOBBLE = 0;
 export const DEFAULT_BURST_FORMS_SHRINK_START = 1;
 export const DEFAULT_BURST_FORMS_SHRINK_TO = 1;
 export const DEFAULT_BURST_FORMS_SHRINK_EASING = 'linear';
+// Flat rotation, independent of spin: spread of the start angle and turn speed (deg, deg/s).
+export const DEFAULT_BURST_FORMS_ROTATION_DEG = 0;
+export const DEFAULT_BURST_FORMS_ROTATION_SPEED_MIN = 0;
+export const DEFAULT_BURST_FORMS_ROTATION_SPEED_MAX = 0;
+// 'classic' keeps the original spin; 'progressive' scales flip depth and smoothness with spin.
+export const DEFAULT_BURST_FORMS_SPIN_PROFILE = 'classic';
 export const DEFAULT_BURST_FORMS_SHAPE = 'circle';
 export const DEFAULT_BURST_FORMS_GLYPH = '★';
 

@@ -23,6 +23,10 @@ import {
     DEFAULT_BURST_FORMS_SHRINK_START,
     DEFAULT_BURST_FORMS_SHRINK_TO,
     DEFAULT_BURST_FORMS_SHRINK_EASING,
+    DEFAULT_BURST_FORMS_ROTATION_DEG,
+    DEFAULT_BURST_FORMS_ROTATION_SPEED_MIN,
+    DEFAULT_BURST_FORMS_ROTATION_SPEED_MAX,
+    DEFAULT_BURST_FORMS_SPIN_PROFILE,
     DEFAULT_BURST_PALETTE,
     BURST_SPARK_COUNT_BASE,
     BURST_SPARK_SPEED_MIN_BASE,
@@ -122,6 +126,14 @@ function resolveBurstFormsConfig(formsInput, formsCurrent, normalizedOptions, si
         shrinkStart: formsInput.shrinkStart ?? formsCurrent.shrinkStart ?? DEFAULT_BURST_FORMS_SHRINK_START,
         shrinkTo: formsInput.shrinkTo ?? formsCurrent.shrinkTo ?? DEFAULT_BURST_FORMS_SHRINK_TO,
         shrinkEasing: formsInput.shrinkEasing ?? formsCurrent.shrinkEasing ?? DEFAULT_BURST_FORMS_SHRINK_EASING,
+        rotationDeg: formsInput.rotationDeg ?? formsCurrent.rotationDeg ?? DEFAULT_BURST_FORMS_ROTATION_DEG,
+        rotationSpeedMin: formsInput.rotationSpeedMin
+            ?? formsCurrent.rotationSpeedMin
+            ?? DEFAULT_BURST_FORMS_ROTATION_SPEED_MIN,
+        rotationSpeedMax: formsInput.rotationSpeedMax
+            ?? formsCurrent.rotationSpeedMax
+            ?? DEFAULT_BURST_FORMS_ROTATION_SPEED_MAX,
+        spinProfile: formsInput.spinProfile ?? formsCurrent.spinProfile ?? DEFAULT_BURST_FORMS_SPIN_PROFILE,
         directionDeg: formsInput.directionDeg ?? formsCurrent.directionDeg ?? DEFAULT_BURST_FORMS_DIRECTION_DEG,
         coneDeg: formsInput.coneDeg ?? formsCurrent.coneDeg ?? DEFAULT_BURST_FORMS_CONE_DEG,
         palette: formsInput.palette
