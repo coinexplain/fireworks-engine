@@ -99,6 +99,13 @@ function resolveBurstFormShapeTokenSet(shape) {
     return resolved;
 }
 
+export const BURST_FORM_SHRINK_EASINGS = Object.freeze(['linear', 'easeIn', 'easeOut', 'easeInOut']);
+
+/** Unknown or missing shrink easing falls back to 'linear'. */
+export function resolveBurstFormShrinkEasing(value) {
+    return BURST_FORM_SHRINK_EASINGS.includes(value) ? value : 'linear';
+}
+
 export function resolveBurstFormShape(value) {
     if (typeof value === 'string') {
         const trimmed = value.trim();

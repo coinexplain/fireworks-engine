@@ -129,6 +129,7 @@ export const FIREWORKS_ENGINE_LAB_IMAGE_GRID_SPACING_BOUNDS = deepFreeze({ min: 
 export const FIREWORKS_ENGINE_LAB_ROCKET_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 export const FIREWORKS_ENGINE_LAB_ROCKET_CASCADE_MODES = deepFreeze(['burst', 'rocket']);
 export const FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
+export const FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS = deepFreeze(['linear', 'easeIn', 'easeOut', 'easeInOut']);
 export const FIREWORKS_ENGINE_LAB_BURST_SPARK_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 export const FIREWORKS_ENGINE_LAB_FLASH_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 
@@ -208,6 +209,9 @@ export const DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS = deepFreeze({
     highlightAngleDeg: 0,
     highlightWidth: 0.18,
     wobble: 0,
+    shrinkStart: 1,
+    shrinkTo: 1,
+    shrinkEasing: 'linear',
     shapeWeightsEnabled: false,
     shapeWeights: deepFreeze({ circle: 1, square: 1, rectangle: 1, glyph: 1, image: 1 }),
     imageCellSize: 128,
@@ -345,6 +349,8 @@ export const FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS = deepFreeze({
     highlightAngleDeg: { min: 0, max: 360 },
     highlightWidth: { min: 0.01, max: 1 },
     wobble: { min: 0, max: 1.5 },
+    shrinkStart: { min: 0, max: 1 },
+    shrinkTo: { min: 0, max: 1 },
 });
 
 export const FIREWORKS_ENGINE_LAB_BURST_SPARKS_BOUNDS = deepFreeze({
@@ -564,6 +570,9 @@ export function normalizeFireworksEngineLabSettings(input = {}) {
     normalized.burstForms.highlightAngleDeg = resolveFinite(safeBurstForms.highlightAngleDeg, normalized.burstForms.highlightAngleDeg, 0, 360);
     normalized.burstForms.highlightWidth = resolveFinite(safeBurstForms.highlightWidth, normalized.burstForms.highlightWidth, 0.01, 1);
     normalized.burstForms.wobble = resolveFinite(safeBurstForms.wobble, normalized.burstForms.wobble, 0, 1.5);
+    normalized.burstForms.shrinkStart = resolveFinite(safeBurstForms.shrinkStart, normalized.burstForms.shrinkStart, 0, 1);
+    normalized.burstForms.shrinkTo = resolveFinite(safeBurstForms.shrinkTo, normalized.burstForms.shrinkTo, 0, 1);
+    normalized.burstForms.shrinkEasing = resolveString(safeBurstForms.shrinkEasing, normalized.burstForms.shrinkEasing, FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS);
     normalized.burstForms.shapeWeightsEnabled = resolveBoolean(
         safeBurstForms.shapeWeightsEnabled,
         normalized.burstForms.shapeWeightsEnabled,

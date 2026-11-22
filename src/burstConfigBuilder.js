@@ -20,6 +20,9 @@ import {
     DEFAULT_BURST_FORMS_HIGHLIGHT_ANGLE_DEG,
     DEFAULT_BURST_FORMS_HIGHLIGHT_WIDTH,
     DEFAULT_BURST_FORMS_WOBBLE,
+    DEFAULT_BURST_FORMS_SHRINK_START,
+    DEFAULT_BURST_FORMS_SHRINK_TO,
+    DEFAULT_BURST_FORMS_SHRINK_EASING,
     DEFAULT_BURST_PALETTE,
     BURST_SPARK_COUNT_BASE,
     BURST_SPARK_SPEED_MIN_BASE,
@@ -116,6 +119,9 @@ function resolveBurstFormsConfig(formsInput, formsCurrent, normalizedOptions, si
             ?? formsCurrent.highlightWidth
             ?? DEFAULT_BURST_FORMS_HIGHLIGHT_WIDTH,
         wobble: formsInput.wobble ?? formsCurrent.wobble ?? DEFAULT_BURST_FORMS_WOBBLE,
+        shrinkStart: formsInput.shrinkStart ?? formsCurrent.shrinkStart ?? DEFAULT_BURST_FORMS_SHRINK_START,
+        shrinkTo: formsInput.shrinkTo ?? formsCurrent.shrinkTo ?? DEFAULT_BURST_FORMS_SHRINK_TO,
+        shrinkEasing: formsInput.shrinkEasing ?? formsCurrent.shrinkEasing ?? DEFAULT_BURST_FORMS_SHRINK_EASING,
         directionDeg: formsInput.directionDeg ?? formsCurrent.directionDeg ?? DEFAULT_BURST_FORMS_DIRECTION_DEG,
         coneDeg: formsInput.coneDeg ?? formsCurrent.coneDeg ?? DEFAULT_BURST_FORMS_CONE_DEG,
         palette: formsInput.palette

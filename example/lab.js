@@ -15,6 +15,7 @@ import {
     DEFAULT_FIREWORKS_ENGINE_LAB_SECTION_STATE,
     FIREWORKS_ENGINE_LAB_BURST_CENTER_FLASH_BOUNDS,
     FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES,
+    FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS,
     FIREWORKS_ENGINE_LAB_BURST_FORM_SHAPES,
     FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS,
     FIREWORKS_ENGINE_LAB_BURST_SPARK_COLOR_MODES,
@@ -141,6 +142,8 @@ const BURST_FORM_TUNING_CONTROLS = Object.freeze([
     { id: 'highlightAngleDeg', label: 'Highlight angle', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.highlightAngleDeg.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.highlightAngleDeg.max, step: 1 },
     { id: 'highlightWidth', label: 'Highlight width', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.highlightWidth.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.highlightWidth.max, step: 0.01 },
     { id: 'wobble', label: 'Wobble', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.wobble.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.wobble.max, step: 0.01 },
+    { id: 'shrinkStart', label: 'Shrink start (share of life)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkStart.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkStart.max, step: 0.01 },
+    { id: 'shrinkTo', label: 'Shrink to (size at end)', min: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkTo.min, max: FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS.shrinkTo.max, step: 0.01 },
 ]);
 
 const BURST_SPARK_TUNING_CONTROLS = Object.freeze([
@@ -957,6 +960,11 @@ function renderBurstFormsSection() {
                     <div class="styleControlGroup">${renderStyleChips('burst-form-color-mode', FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES.map((id) => ({ id, label: id.toUpperCase() })), settings.burstForms.colorMode, 'burst-forms-color-mode')}</div>
                 </div>
 
+                <div class="styleControlRow">
+                    ${renderSettingLabel('Shrink easing', 'shrinkEasing', 'burstForms.shrinkEasing')}
+                    <div class="styleControlGroup">${renderStyleChips('burst-form-shrink-easing', FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS.map((id) => ({ id, label: id })), settings.burstForms.shrinkEasing, 'burst-forms-shrink-easing')}</div>
+                </div>
+
                 ${settings.burstForms.colorMode === 'single' ? `
                     <label class="colorField ${settings.burstForms.enabled ? '' : 'colorFieldMuted'}">
                         <div class="tuningMeta">
@@ -1569,6 +1577,11 @@ app.addEventListener('change', (event) => {
 
     if (action === 'burst-forms-color-mode') {
         updateSetting('burstForms.colorMode', target.value);
+        return;
+    }
+
+    if (action === 'burst-forms-shrink-easing') {
+        updateSetting('burstForms.shrinkEasing', target.value);
         return;
     }
 

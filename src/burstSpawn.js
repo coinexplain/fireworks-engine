@@ -21,6 +21,7 @@ import {
 import {
     normalizeGroupedPublicOptions,
     resolveBurstFormShapeSet,
+    resolveBurstFormShrinkEasing,
     resolveBurstFlashColorMode,
 } from './valueNormalizers.js';
 import {
@@ -345,6 +346,9 @@ function spawnFormParticles(engine, request, startIndex, count) {
         highlightAngleDeg,
         highlightWidth,
         wobble,
+        shrinkStart,
+        shrinkTo,
+        shrinkEasing,
         directionDeg,
         coneDeg,
         palette,
@@ -365,6 +369,9 @@ function spawnFormParticles(engine, request, startIndex, count) {
     const glyphCount = glyphSet?.length ?? 0;
     const imageFrames = Array.isArray(images) ? images : [];
     const imageCount = imageFrames.length;
+    const formShrinkStart = clamp(Number.isFinite(shrinkStart) ? shrinkStart : 1, 0, 1);
+    const formShrinkTo = clamp(Number.isFinite(shrinkTo) ? shrinkTo : 1, 0, 1);
+    const formShrinkEasing = resolveBurstFormShrinkEasing(shrinkEasing);
 
     for (let index = startIndex; index < startIndex + count; index += 1) {
         const angle = resolveDirectedBurstAngle(
@@ -508,6 +515,9 @@ function spawnFormParticles(engine, request, startIndex, count) {
             )
             : 0;
         particle.formWidthScale = 1;
+        particle.formShrinkStart = formShrinkStart;
+        particle.formShrinkTo = formShrinkTo;
+        particle.formShrinkEasing = formShrinkEasing;
         particle.formWobble = wobbleStrength;
         particle.formWobbleLateralSpeed = wobbleStrength > 0
             ? randomRange(FORM_WOBBLE_TUNING.lateralSpeedMin, FORM_WOBBLE_TUNING.lateralSpeedMax) * wobbleStrength
