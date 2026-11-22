@@ -560,13 +560,15 @@ async function copyTextToClipboard(text) {
     return fallbackCopyText(text);
 }
 
-async function copySettingsSnippet() {
-    const snippet = buildSettingsSnippet(settings);
+async function copySettingsSnippet({ full = false } = {}) {
+    const snippet = buildSettingsSnippet(settings, { full });
     try {
         if (!(await copyTextToClipboard(snippet))) {
             throw new Error('Clipboard fallback failed.');
         }
-        updateStatus('Copied a plug-and-play snippet with current lab settings.');
+        updateStatus(full
+            ? 'Copied a snippet with all current lab values, including ones equal to engine defaults.'
+            : 'Copied a plug-and-play snippet with current lab settings.');
     } catch {
         updateStatus('Could not copy the snippet. Clipboard access is blocked in this context.');
     }
@@ -1434,7 +1436,8 @@ function render() {
                         <button type="button" class="targetModeButton ${isTargetModeEnabled ? 'targetModeButtonActive' : ''}" data-target-mode-ignore="true" data-action="target-mode">Target mode</button>
                         <button type="button" class="stopButton" data-target-mode-ignore="true" data-action="stop">Stop</button>
                         <button type="button" class="resetButton" data-target-mode-ignore="true" data-action="reset">Reset</button>
-                        <button type="button" class="copySnippetButton" data-target-mode-ignore="true" data-action="copy-snippet">Copy snippet</button>
+                        <button type="button" class="copySnippetButton" data-target-mode-ignore="true" data-action="copy-snippet" title="Only values that differ from engine defaults">Copy snippet</button>
+                        <button type="button" class="copySnippetButton" data-target-mode-ignore="true" data-action="copy-full-snippet" title="Every value, including engine defaults: use when merging over other base options">Copy full snippet</button>
                         <a class="backLink" href="./examples.html" data-target-mode-ignore="true">Gallery</a>
                         <a class="backLink" href="./fireworks-engine-options-reference.html" data-target-mode-ignore="true">Options reference</a>
                     </div>
@@ -1490,6 +1493,11 @@ app.addEventListener('click', (event) => {
 
     if (action === 'copy-snippet') {
         void copySettingsSnippet();
+        return;
+    }
+
+    if (action === 'copy-full-snippet') {
+        void copySettingsSnippet({ full: true });
         return;
     }
 
