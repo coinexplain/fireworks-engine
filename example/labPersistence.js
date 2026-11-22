@@ -130,6 +130,7 @@ export const FIREWORKS_ENGINE_LAB_ROCKET_COLOR_MODES = deepFreeze(['palette', 'r
 export const FIREWORKS_ENGINE_LAB_ROCKET_CASCADE_MODES = deepFreeze(['burst', 'rocket']);
 export const FIREWORKS_ENGINE_LAB_BURST_FORM_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 export const FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS = deepFreeze(['linear', 'easeIn', 'easeOut', 'easeInOut']);
+export const FIREWORKS_ENGINE_LAB_BURST_FORM_SPIN_PROFILES = deepFreeze(['classic', 'progressive']);
 export const FIREWORKS_ENGINE_LAB_BURST_SPARK_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 export const FIREWORKS_ENGINE_LAB_FLASH_COLOR_MODES = deepFreeze(['palette', 'rgb', 'single']);
 
@@ -212,6 +213,10 @@ export const DEFAULT_FIREWORKS_ENGINE_LAB_BURST_FORMS = deepFreeze({
     shrinkStart: 1,
     shrinkTo: 1,
     shrinkEasing: 'linear',
+    rotationDeg: 0,
+    rotationSpeedMin: 0,
+    rotationSpeedMax: 0,
+    spinProfile: 'classic',
     shapeWeightsEnabled: false,
     shapeWeights: deepFreeze({ circle: 1, square: 1, rectangle: 1, glyph: 1, image: 1 }),
     imageCellSize: 128,
@@ -351,6 +356,9 @@ export const FIREWORKS_ENGINE_LAB_BURST_FORMS_BOUNDS = deepFreeze({
     wobble: { min: 0, max: 1.5 },
     shrinkStart: { min: 0, max: 1 },
     shrinkTo: { min: 0, max: 1 },
+    rotationDeg: { min: 0, max: 360 },
+    rotationSpeedMin: { min: 0, max: 720 },
+    rotationSpeedMax: { min: 0, max: 720 },
 });
 
 export const FIREWORKS_ENGINE_LAB_BURST_SPARKS_BOUNDS = deepFreeze({
@@ -573,6 +581,10 @@ export function normalizeFireworksEngineLabSettings(input = {}) {
     normalized.burstForms.shrinkStart = resolveFinite(safeBurstForms.shrinkStart, normalized.burstForms.shrinkStart, 0, 1);
     normalized.burstForms.shrinkTo = resolveFinite(safeBurstForms.shrinkTo, normalized.burstForms.shrinkTo, 0, 1);
     normalized.burstForms.shrinkEasing = resolveString(safeBurstForms.shrinkEasing, normalized.burstForms.shrinkEasing, FIREWORKS_ENGINE_LAB_BURST_FORM_SHRINK_EASINGS);
+    normalized.burstForms.rotationDeg = resolveFinite(safeBurstForms.rotationDeg, normalized.burstForms.rotationDeg, 0, 360);
+    normalized.burstForms.rotationSpeedMin = resolveFinite(safeBurstForms.rotationSpeedMin, normalized.burstForms.rotationSpeedMin, 0, 720);
+    normalized.burstForms.rotationSpeedMax = resolveFinite(safeBurstForms.rotationSpeedMax, normalized.burstForms.rotationSpeedMax, normalized.burstForms.rotationSpeedMin, 720);
+    normalized.burstForms.spinProfile = resolveString(safeBurstForms.spinProfile, normalized.burstForms.spinProfile, FIREWORKS_ENGINE_LAB_BURST_FORM_SPIN_PROFILES);
     normalized.burstForms.shapeWeightsEnabled = resolveBoolean(
         safeBurstForms.shapeWeightsEnabled,
         normalized.burstForms.shapeWeightsEnabled,

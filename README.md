@@ -216,6 +216,9 @@ fireworks.burst(x, y, {
         shrinkStart: 0.6,
         shrinkTo: 0.2,
         shrinkEasing: 'easeIn',
+        rotationDeg: 360,
+        rotationSpeedMin: 20,
+        rotationSpeedMax: 60,
     },
     burstSparks: {
         shape: 'fade',
@@ -238,6 +241,21 @@ Form particles fade out over their whole life. Since 1.2.0 they can also shrink 
 
 Works for every form shape, including glyphs and images. Values are read at spawn, like other form
 settings, and are clamped to 0–1; an unknown easing falls back to `'linear'`.
+
+### Flat rotation and spin profiles
+
+Since 1.3.0 form particles can be rotated in the screen plane without the 3D flip of `spin`:
+
+- `rotationDeg` — spread of the start angle in degrees (0–360). `360` gives any angle, `40` gives
+  −20°…+20°. Default `0`: particles keep their drawn orientation.
+- `rotationSpeedMin` / `rotationSpeedMax` — turn speed range in degrees per second; each particle
+  picks a speed and a random direction. Default `0`: the start angle stays.
+
+`spin` imitates a flipping coin: the particle turns in the plane and periodically flattens to 2–12%
+of its width. In the default `spinProfile: 'classic'` the flip depth does not depend on `spin`, so
+even small values flatten particles and toggle sharply. With `spinProfile: 'progressive'` flip depth
+and on/off smoothness grow with `spin` (full classic depth at `spin: 1`), and particles start fully
+open: small values give a gentle sway, large ones a sharp flip. Flat rotation adds to either profile.
 
 ### Image forms and shape weights
 

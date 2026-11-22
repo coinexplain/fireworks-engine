@@ -224,7 +224,10 @@ export function updateParticles(engine, dt) {
 
             const spinIsActive = particle.formSpinActive && particle.formSpinBudget > 0;
             const blendTarget = spinIsActive ? 1 : 0;
-            const blendResponse = Math.min(1, FORM_SPIN_UPDATE_TUNING.blendResponse * dt);
+            const blendResponse = Math.min(
+                1,
+                FORM_SPIN_UPDATE_TUNING.blendResponse * (particle.formSpinBlendResponseScale ?? 1) * dt,
+            );
             particle.formSpinBlend += (blendTarget - particle.formSpinBlend) * blendResponse;
 
             if (spinIsActive) {
@@ -251,6 +254,10 @@ export function updateParticles(engine, dt) {
                 particle.formSpinBlend = 0;
                 particle.formWidthScale = 1;
             }
+        }
+
+        if (particle.type === 'form' && particle.formRotationSpeed) {
+            particle.formRotation += particle.formRotationSpeed * dt;
         }
 
         if (isParticleBelowCanvas(engine, particle)) {

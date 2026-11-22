@@ -254,6 +254,10 @@ export function buildBurstFormsOptions(burstForms) {
         shrinkStart: burstForms.shrinkStart,
         shrinkTo: burstForms.shrinkTo,
         shrinkEasing: burstForms.shrinkEasing,
+        rotationDeg: burstForms.rotationDeg,
+        rotationSpeedMin: burstForms.rotationSpeedMin,
+        rotationSpeedMax: burstForms.rotationSpeedMax,
+        spinProfile: burstForms.spinProfile,
         shapeWeights: resolveLabShapeWeights(burstForms),
     };
 }
@@ -424,6 +428,7 @@ function compactBurstFormsSnippetOptions(burstFormsOptions) {
 
     if (!(Number.isFinite(compactOptions.spin) && compactOptions.spin > 0)) {
         delete compactOptions.spinCoverage;
+        delete compactOptions.spinProfile;
         delete compactOptions.spinDuration;
         delete compactOptions.spinPause;
         delete compactOptions.highlight;
